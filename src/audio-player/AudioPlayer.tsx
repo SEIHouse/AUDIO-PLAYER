@@ -49,6 +49,15 @@ export function AudioPlayer(props: AudioPlayerProps) {
     const [showCopied, setShowCopied] = useState(false)
     const [announcement, setAnnouncement] = useState("")
     const rootRef = useRef<HTMLDivElement>(null)
+    const shareTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    useEffect(() => {
+        return () => {
+            if (shareTimeoutRef.current !== null) {
+                clearTimeout(shareTimeoutRef.current)
+            }
+        }
+    }, [])
 
     // Keep the index valid if the track list shrinks / mode changes.
     useEffect(() => {
@@ -130,7 +139,10 @@ export function AudioPlayer(props: AudioPlayerProps) {
         } else if (navigator.clipboard) {
             navigator.clipboard.writeText(url).then(() => {
                 setShowCopied(true)
-                setTimeout(() => setShowCopied(false), 2000)
+                shareTimeoutRef.current = setTimeout(
+                    () => setShowCopied(false),
+                    2000
+                )
             })
         }
     }, [currentTrack.title, currentTrack.artist])
@@ -212,7 +224,7 @@ export function AudioPlayer(props: AudioPlayerProps) {
             {backgroundImage?.src && (
                 <div
                     className="ap-bg-image"
-                    style={{ backgroundImage: `url(${backgroundImage.src})` }}
+                    style={{ backgroundImage: `url("${backgroundImage.src}")` }}
                     aria-hidden="true"
                 />
             )}
