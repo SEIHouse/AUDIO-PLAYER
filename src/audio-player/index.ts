@@ -7,6 +7,7 @@ export {
 } from "./automix/silenceAnalysis"
 export { formatTime } from "./utils/formatTime"
 export { trackKey } from "./utils/trackKey"
+export { checkCodecSupport } from "./utils/checkCodecSupport"
 export { ProgressBar } from "./components/ProgressBar"
 export { VolumeControl } from "./components/VolumeControl"
 

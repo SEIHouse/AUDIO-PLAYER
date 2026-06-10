@@ -1,0 +1,57 @@
+Attached Element Context from Integrated Browser
+
+Element: div.ap-progress
+
+URL: http://localhost:5173/
+
+HTML Path: div#root > div.lab-shell > section.lab-section > div.lab-section__grid > div.lab-feed > div.lab-feed__panel > div.lab-feed__player > div.ap-root > div.ap-content > div.ap-progress-group > div.ap-progress
+
+Outer HTML:
+```html
+<div class="ap-progress" role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="48" aria-valuenow="23" aria-valuetext="0:23 of 0:48" aria-disabled="false"><div class="ap-progress__track"></div><div class="ap-progress__buffered" style="width: 100%;"></div><div class="ap-progress__fill" style="width: 47.3287%;"></div><div class="ap-progress__thumb" style="left: 47.3287%;"></div></div>
+```
+
+Dimensions:
+- top: 130px
+- left: 69px
+- width: 215px
+- height: 24px
+
+CSS:
+```css
+* { box-sizing: border-box; }
+.ap-progress { position: relative;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    touch-action: pan-y;
+    outline: none; }
+.ap-progress, .ap-volume__slider { user-select: none;
+    -webkit-user-select: none; }
+
+/* Inherited */
+.ap-root { color: var(--ap-text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif }
+body { color: var(--lab-text); font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif }
+
+/* Resolved values */
+align-items: center;
+box-sizing: border-box;
+color: rgb(255, 255, 255);
+cursor: pointer;
+display: flex;
+font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+height: 24px;
+outline-color: rgb(255, 255, 255);
+outline-style: none;
+outline-width: 2.49756px;
+position: relative;
+touch-action: pan-y;
+unicode-bidi: isolate /*UA*/;
+user-select: none;
+width: 214.907px;
+
+/* CSS variables */
+--ap-text: #FFFFFF;
+--lab-text: #f4f4f7;
+```

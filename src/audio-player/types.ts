@@ -161,6 +161,13 @@ export interface AudioPlayerEngine {
     loadAndPlay: () => void
     /** Acknowledge the autoplay-blocked flag after presenting a UI affordance. */
     dismissAutoplayBlocked: () => void
+
+    // Preload / cache-warm a specific track without switching playback to it.
+    preload: (track: Track) => void
+    // Explicitly clear the active source, stop playback, and release refs.
+    unload: () => void
+    // Smoothly ramp volume to a target level over a duration (ms).
+    fade: (to: number, durationMs: number) => void
 }
 
 /** How the global session behaves when a track ends. */

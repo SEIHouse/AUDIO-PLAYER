@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import type { AudioPlayerEngine, BufferedRange, UseAudioPlayerOptions } from "./types"
+import type { AudioPlayerEngine, BufferedRange, Track, UseAudioPlayerOptions } from "./types"
 
 /**
  * Headless audio engine. Owns a single hidden <audio> element and is the sole
@@ -29,8 +29,11 @@ export function useAudioPlayer(
     const isPlayingRef = useRef(false)
     const playPromiseRef = useRef<Promise<void> | null>(null)
     const animationFrameRef = useRef<number | null>(null)
+    const fadeFrameRef = useRef<number | null>(null)
     const isFirstLoadRef = useRef(true)
     const previousVolumeRef = useRef(1)
+    const preloadAudioRef = useRef<HTMLAudioElement | null>(null)
+    const pendingSeekRef = useRef<number | null>(null)
     const onEndedRef = useRef(onEnded)
     onEndedRef.current = onEnded
     /**
@@ -186,7 +189,12 @@ export function useAudioPlayer(
     const seek = useCallback(
         (time: number) => {
             const audio = audioRef.current
-            if (!audio || !hasAudio || duration <= 0) return
+            if (!audio || !hasAudio) return
+            if (duration <= 0) {
+                pendingSeekRef.current = time
+                return
+            }
+            pendingSeekRef.current = null
             const next = Math.max(0, Math.min(duration, time))
             audio.currentTime = next
             currentTimeRef.current = next
@@ -205,6 +213,10 @@ export function useAudioPlayer(
     )
 
     const setVolume = useCallback((value: number) => {
+        if (fadeFrameRef.current !== null) {
+            cancelAnimationFrame(fadeFrameRef.current)
+            fadeFrameRef.current = null
+        }
         const audio = audioRef.current
         const next = Math.max(0, Math.min(1, value))
         previousVolumeRef.current = next > 0 ? next : previousVolumeRef.current
@@ -231,6 +243,10 @@ export function useAudioPlayer(
     }, [])
 
     const toggleMute = useCallback(() => {
+        if (fadeFrameRef.current !== null) {
+            cancelAnimationFrame(fadeFrameRef.current)
+            fadeFrameRef.current = null
+        }
         const audio = audioRef.current
         if (!audio) return
         const nextMuted = !audio.muted
@@ -267,6 +283,86 @@ export function useAudioPlayer(
 
     const dismissAutoplayBlocked = useCallback(() => {
         setAutoplayBlocked(false)
+    }, [])
+
+    const preload = useCallback((track: Track) => {
+        const url = track.audioFile?.trim() ?? ""
+        if (!url) return
+        let el = preloadAudioRef.current
+        if (!el) {
+            el = new Audio()
+            el.preload = "auto"
+            preloadAudioRef.current = el
+        }
+        if (el.src !== url) {
+            el.src = url
+            el.load()
+        }
+    }, [])
+
+    const unload = useCallback(() => {
+        const audio = audioRef.current
+        if (!audio) return
+        bumpToken()
+        clearPendingPlay()
+        stopLoop()
+        audio.pause()
+        audio.removeAttribute("src")
+        audio.load()
+        currentTimeRef.current = 0
+        setCurrentTime(0)
+        setDuration(0)
+        setBuffered(0)
+        setBufferedRanges([])
+        setIsPlaying(false)
+        isPlayingRef.current = false
+        setHasError(false)
+        setErrorMessage("")
+        setIsBuffering(false)
+        setAutoplayBlocked(false)
+        pendingSeekRef.current = null
+        if (fadeFrameRef.current !== null) {
+            cancelAnimationFrame(fadeFrameRef.current)
+            fadeFrameRef.current = null
+        }
+        if (preloadAudioRef.current) {
+            preloadAudioRef.current.src = ""
+            preloadAudioRef.current = null
+        }
+    }, [bumpToken, clearPendingPlay, stopLoop])
+
+    const fade = useCallback((to: number, durationMs: number) => {
+        const audio = audioRef.current
+        if (!audio) return
+        const target = Math.max(0, Math.min(1, to))
+        if (durationMs <= 0) {
+            if (fadeFrameRef.current !== null) {
+                cancelAnimationFrame(fadeFrameRef.current)
+                fadeFrameRef.current = null
+            }
+            audio.volume = target
+            setVolumeState(target)
+            return
+        }
+        const startVolume = audio.volume
+        const startTime = performance.now()
+        if (fadeFrameRef.current !== null) {
+            cancelAnimationFrame(fadeFrameRef.current)
+        }
+        const step = (now: number) => {
+            const elapsed = now - startTime
+            const progress = Math.min(1, elapsed / durationMs)
+            const next = startVolume + (target - startVolume) * progress
+            const clamped = Math.max(0, Math.min(1, next))
+            audio.volume = clamped
+            setVolumeState(clamped)
+            if (progress < 1) {
+                fadeFrameRef.current = requestAnimationFrame(step)
+            } else {
+                fadeFrameRef.current = null
+            }
+        }
+        fadeFrameRef.current = requestAnimationFrame(step)
     }, [])
 
     // Wire up all <audio> events. Single rAF loop owns currentTime while playing.
@@ -347,7 +443,16 @@ export function useAudioPlayer(
             onEndedRef.current?.()
         }
         const handleLoadedMetadata = () => {
-            setDuration(Number.isFinite(audio.duration) ? audio.duration : 0)
+            const loadedDuration = Number.isFinite(audio.duration) ? audio.duration : 0
+            setDuration(loadedDuration)
+            const pending = pendingSeekRef.current
+            if (pending !== null && loadedDuration > 0) {
+                pendingSeekRef.current = null
+                const clamped = Math.max(0, Math.min(loadedDuration, pending))
+                audio.currentTime = clamped
+                currentTimeRef.current = clamped
+                setCurrentTime(clamped)
+            }
         }
         const handleWaiting = () => setIsBuffering(true)
         const clearBuffering = () => setIsBuffering(false)
@@ -406,6 +511,10 @@ export function useAudioPlayer(
 
         return () => {
             stopLoop()
+            if (fadeFrameRef.current !== null) {
+                cancelAnimationFrame(fadeFrameRef.current)
+                fadeFrameRef.current = null
+            }
             audio.removeEventListener("play", handlePlay)
             audio.removeEventListener("pause", handlePause)
             audio.removeEventListener("ended", handleEnded)
@@ -439,6 +548,10 @@ export function useAudioPlayer(
         clearPendingPlay()
         stopLoop()
         audio.pause()
+        if (fadeFrameRef.current !== null) {
+            cancelAnimationFrame(fadeFrameRef.current)
+            fadeFrameRef.current = null
+        }
 
         // On the first mount, don't reset state or call audio.load() when the
         // source is already loaded/loading from a cache hit. Resetting would
@@ -457,6 +570,7 @@ export function useAudioPlayer(
             setErrorMessage("")
             setIsBuffering(false)
             setAutoplayBlocked(false)
+            pendingSeekRef.current = null
         }
 
         if (!hasAudio) {
@@ -561,5 +675,8 @@ export function useAudioPlayer(
         retry,
         loadAndPlay,
         dismissAutoplayBlocked,
+        preload,
+        unload,
+        fade,
     }
 }
