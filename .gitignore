@@ -1,4 +1,1 @@
-node_modules
-dist
-*.local
-.DS_Store
+Nothing needs to be added to .gitignore since only a markdown file (.md) was added and no build artifacts, dependencies, or temporary files were included in the changes.
