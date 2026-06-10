@@ -1,4 +1,4 @@
-import { StrictMode, useState } from "react"
+import { StrictMode, useMemo, useState } from "react"
 import type { CSSProperties, ReactNode } from "react"
 import { createRoot } from "react-dom/client"
 import {
@@ -9,6 +9,9 @@ import {
     StickyBottomPlayer,
     MiniSidebarPlayer,
     SeaCardPlayer,
+    createAnalyticsPlugin,
+    createKeyboardShortcutPlugin,
+    createLyricsPlugin,
 } from "../audio-player"
 import type { AudioPlayerProps, Track } from "../audio-player"
 import "./audio-player-lab.css"
@@ -769,6 +772,128 @@ function GlobalSessionSection() {
     )
 }
 
+/* ----------------------------- Plugin architecture demo ----------------------------- */
+function PluginArchitectureSection() {
+    const [events, setEvents] = useState<string[]>([])
+    const [activeLyric, setActiveLyric] = useState("Waiting for playback…")
+
+    const keyboardPlugins = useMemo(
+        () => [
+            createKeyboardShortcutPlugin({
+                name: "demo-keyboard-shortcuts",
+                enablePlaylistKeys: false,
+            }),
+        ],
+        []
+    )
+
+    const threePlugins = useMemo(
+        () => [
+            createKeyboardShortcutPlugin({
+                name: "demo-triple-keyboard",
+                enablePlaylistKeys: true,
+            }),
+            createAnalyticsPlugin({
+                name: "demo-triple-analytics",
+                includeTimeUpdates: false,
+                send: (event) => {
+                    setEvents((prev) =>
+                        [
+                            `${new Date(event.timestamp).toLocaleTimeString()} · ${event.type}`,
+                            ...prev,
+                        ].slice(0, 6)
+                    )
+                },
+            }),
+            createLyricsPlugin({
+                name: "demo-triple-lyrics",
+                lyrics: "[00:00.00]Plugin-ready player\n[00:06.00]Keyboard, analytics, and lyrics\n[00:12.00]Hooks stay isolated\n[00:18.00]Playback keeps running",
+                onLineChange: (line) => {
+                    setActiveLyric(line?.text ?? "Waiting for playback…")
+                },
+            }),
+        ],
+        []
+    )
+
+    return (
+        <section className="lab-section">
+            <h2 className="lab-section__title">
+                9. Plugin architecture
+                <small>0 · 1 · 3 plugins</small>
+            </h2>
+            <p className="lab-section__desc">
+                These players exercise the new lifecycle plugin system. One runs
+                with no plugins, one registers keyboard shortcuts, and one stacks
+                keyboard, analytics, and lyric-sync plugins. Plugin failures are
+                isolated by the manager so playback stays stable.
+            </p>
+            <div className="lab-section__grid">
+                <div className="lab-states">
+                    <div className="lab-state">
+                        <h3 className="lab-state__title">0 plugins</h3>
+                        <p className="lab-state__desc">
+                            Baseline playback. No optional plugins are registered.
+                        </p>
+                        <div className="lab-state__player">
+                            <AudioPlayer
+                                title="Plugin Baseline"
+                                artist="SEIHouse"
+                                audioFile={SAMPLE}
+                                accentColor="#ffffff"
+                                progressColor="#ffffff"
+                                backgroundColor="rgba(20,20,28,0.6)"
+                            />
+                        </div>
+                    </div>
+                    <div className="lab-state">
+                        <h3 className="lab-state__title">1 plugin</h3>
+                        <p className="lab-state__desc">
+                            Focus the player and use Space/K plus arrow/J/L
+                            seeking via <code>KeyboardShortcutPlugin</code>.
+                        </p>
+                        <div className="lab-state__player">
+                            <AudioPlayer
+                                title="Keyboard Plugin"
+                                artist="SEIHouse"
+                                audioFile={SAMPLE}
+                                plugins={keyboardPlugins}
+                                accentColor="#22D3A6"
+                                progressColor="#22D3A6"
+                                backgroundColor="rgba(16,28,22,0.6)"
+                            />
+                        </div>
+                    </div>
+                    <div className="lab-state">
+                        <h3 className="lab-state__title">3 plugins</h3>
+                        <p className="lab-state__desc">
+                            Keyboard shortcuts, analytics callbacks, and lyric
+                            synchronization run together.
+                        </p>
+                        <div className="lab-state__player">
+                            <AudioPlayer
+                                tracks={playlist}
+                                showTracklist
+                                repeatMode="all"
+                                plugins={threePlugins}
+                                accentColor="#7C5CFF"
+                                progressColor="#7C5CFF"
+                                backgroundColor="rgba(20,20,28,0.6)"
+                            />
+                        </div>
+                        <div className="lab-state__note">
+                            lyric: {activeLyric}
+                        </div>
+                        <div className="lab-state__note">
+                            events: {events.length > 0 ? events.join(" · ") : "none yet"}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    )
+}
+
 /* ----------------------------- Lab page ----------------------------- */
 function Lab() {
     return (
@@ -1025,6 +1150,8 @@ function Lab() {
             <footer className="lab-footer">
                 <p>Tip: focus a player and use <kbd>Space</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> <kbd>N</kbd> <kbd>P</kbd> for playback shortcuts scoped to the player root.</p>
             </footer>
+
+            <PluginArchitectureSection />
         </div>
     )
 }

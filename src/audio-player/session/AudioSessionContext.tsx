@@ -9,15 +9,22 @@ import {
 } from "react"
 import type {
     AudioSessionProviderProps,
+    AudioPlayerEngine,
     RepeatMode,
     SessionEngine,
     Track,
 } from "../types"
+import type {
+    AudioPlayerPlugin,
+    PluginPlayerContext,
+} from "../core/plugins/PluginInterface"
 import { useAudioPlayer } from "../useAudioPlayer"
 import { useAutomix } from "../automix/useAutomix"
+import { usePluginManager } from "../core/plugins/usePluginManager"
 import { trackKey } from "../utils/trackKey"
 
 const AudioSessionContext = createContext<SessionEngine | null>(null)
+const EMPTY_PLUGINS: readonly AudioPlayerPlugin[] = []
 
 /**
  * Build a playback order (a list of queue indices). When shuffle is off this is
@@ -52,6 +59,7 @@ export function AudioSessionProvider({
     repeatMode: initialRepeat = "off",
     shuffle: initialShuffle = false,
     automix: initialAutomix = false,
+    plugins: externalPlugins = EMPTY_PLUGINS,
 }: AudioSessionProviderProps) {
     const [queue, setQueueState] = useState<Track[]>(initialQueue)
     const [currentIndex, setCurrentIndex] = useState<number>(
@@ -170,6 +178,12 @@ export function AudioSessionProvider({
         automixNextIndex !== null && automixNextIndex !== currentIndex
             ? queue[automixNextIndex] ?? null
             : null
+    const pluginNextIndex =
+        repeatMode !== "one" ? stepIndex(currentIndex, 1) : null
+    const pluginNextTrack =
+        pluginNextIndex !== null && pluginNextIndex !== currentIndex
+            ? queue[pluginNextIndex] ?? null
+            : null
 
     const automixCtl = useAutomix({
         engine,
@@ -178,7 +192,83 @@ export function AudioSessionProvider({
         currentTrack,
         nextTrack: automixNextTrack,
         requestAdvance,
+        suppressDeprecatedWarning: true,
     })
+
+    const pluginContextStateRef = useRef({
+        engine,
+        currentTrack,
+        nextTrack: pluginNextTrack,
+        sourceKey,
+        queue,
+        currentIndex,
+        repeatMode,
+        shuffle,
+        requestAdvance,
+        next: () => {},
+        previous: () => {},
+    })
+
+    const pluginContext = useMemo<PluginPlayerContext>(
+        () => ({
+            getEngine: () => pluginContextStateRef.current.engine,
+            getRootElement: () => null,
+            getAudioElement: () => pluginContextStateRef.current.engine.audioRef.current,
+            getCurrentTrack: () => pluginContextStateRef.current.currentTrack,
+            getNextTrack: () => pluginContextStateRef.current.nextTrack,
+            getSourceKey: () => pluginContextStateRef.current.sourceKey,
+            requestAdvance: () => pluginContextStateRef.current.requestAdvance(),
+            next: () => pluginContextStateRef.current.next(),
+            previous: () => pluginContextStateRef.current.previous(),
+            getQueue: () => pluginContextStateRef.current.queue,
+            getCurrentIndex: () => pluginContextStateRef.current.currentIndex,
+            getRepeatMode: () => pluginContextStateRef.current.repeatMode,
+            getShuffle: () => pluginContextStateRef.current.shuffle,
+        }),
+        []
+    )
+    const pluginManager = usePluginManager(externalPlugins, pluginContext)
+
+    const seekWithPlugins = useCallback(
+        (time: number) => {
+            const nextPosition =
+                engine.duration > 0 ? Math.max(0, Math.min(engine.duration, time)) : time
+            engine.seek(time)
+            pluginManager.trigger("onSeek", nextPosition)
+        },
+        [engine, pluginManager]
+    )
+
+    const seekByWithPlugins = useCallback(
+        (delta: number) => {
+            const base = engine.audioRef.current?.currentTime ?? engine.currentTime
+            seekWithPlugins(base + delta)
+        },
+        [engine.audioRef, engine.currentTime, seekWithPlugins]
+    )
+
+    const pluginAwareEngine = useMemo<AudioPlayerEngine>(
+        () => ({
+            ...engine,
+            seek: seekWithPlugins,
+            seekBy: seekByWithPlugins,
+        }),
+        [engine, seekByWithPlugins, seekWithPlugins]
+    )
+
+    pluginContextStateRef.current = {
+        engine: pluginAwareEngine,
+        currentTrack,
+        nextTrack: pluginNextTrack,
+        sourceKey,
+        queue,
+        currentIndex,
+        repeatMode,
+        shuffle,
+        requestAdvance,
+        next: () => {},
+        previous: () => {},
+    }
 
     // End-of-track auto-advance: always continue into the next track. We force
     // the deferred play here because the engine has already flipped its internal
@@ -187,8 +277,32 @@ export function AudioSessionProvider({
     // (or is moving) the queue, the normal advance must not run again.
     advanceRef.current = () => {
         if (automixCtl.handleTrackEnded()) return
+        if (pluginManager.triggerUntilHandled("onTrackEnded", currentTrack)) return
         advanceToNextRef.current()
     }
+
+    useEffect(() => {
+        pluginManager.trigger("onTrackLoad", currentTrack)
+    }, [pluginManager, sourceKey, currentTrack])
+
+    const previousPluginPlayingRef = useRef(engine.isPlaying)
+    useEffect(() => {
+        if (previousPluginPlayingRef.current === engine.isPlaying) return
+        previousPluginPlayingRef.current = engine.isPlaying
+        pluginManager.trigger(engine.isPlaying ? "onPlay" : "onPause")
+    }, [pluginManager, engine.isPlaying])
+
+    useEffect(() => {
+        pluginManager.trigger("onTimeUpdate", engine.currentTime)
+    }, [pluginManager, engine.currentTime])
+
+    useEffect(() => {
+        if (!engine.hasAudio || queue.length === 0) pluginManager.trigger("onStop")
+    }, [pluginManager, engine.hasAudio, queue.length])
+
+    useEffect(() => () => {
+        pluginManager.trigger("onStop")
+    }, [pluginManager])
 
     // Start playback for any pending request after a track/source change. Keyed
     // on both `sourceKey` and `src`: a same-id active refresh can keep the
@@ -282,12 +396,26 @@ export function AudioSessionProvider({
     const previous = useCallback(() => {
         // Restart the current track if we're more than 3s in.
         if (engine.currentTime > 3) {
-            engine.seek(0)
+            seekWithPlugins(0)
             return
         }
         const target = stepIndex(currentIndex, -1)
         if (target !== null) goTo(target, engine.isPlaying)
-    }, [stepIndex, currentIndex, goTo, engine])
+    }, [stepIndex, currentIndex, goTo, engine.currentTime, engine.isPlaying, seekWithPlugins])
+
+    pluginContextStateRef.current = {
+        engine: pluginAwareEngine,
+        currentTrack,
+        nextTrack: pluginNextTrack,
+        sourceKey,
+        queue,
+        currentIndex,
+        repeatMode,
+        shuffle,
+        requestAdvance,
+        next,
+        previous,
+    }
 
     const clearQueue = useCallback(() => {
         engine.pause()
@@ -308,7 +436,7 @@ export function AudioSessionProvider({
 
     const value = useMemo<SessionEngine>(
         () => ({
-            ...engine,
+            ...pluginAwareEngine,
             queue,
             currentIndex,
             currentTrack,
@@ -329,7 +457,7 @@ export function AudioSessionProvider({
             toggleAutomix,
         }),
         [
-            engine,
+            pluginAwareEngine,
             queue,
             currentIndex,
             currentTrack,

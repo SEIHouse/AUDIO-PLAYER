@@ -1,6 +1,24 @@
 export { AudioPlayer, default } from "./AudioPlayer"
 export { useAudioPlayer } from "./useAudioPlayer"
 export { useAutomix, AUTOMIX_FADE_MS } from "./automix/useAutomix"
+export { PluginManager } from "./core/plugins/PluginManager"
+export { usePluginManager } from "./core/plugins/usePluginManager"
+export {
+    AutomixPlugin,
+    createAutomixPlugin,
+} from "./plugins/AutomixPlugin"
+export {
+    KeyboardShortcutPlugin,
+    createKeyboardShortcutPlugin,
+} from "./plugins/KeyboardShortcutPlugin"
+export {
+    AnalyticsPlugin,
+    createAnalyticsPlugin,
+} from "./plugins/AnalyticsPlugin"
+export {
+    LyricsPlugin,
+    createLyricsPlugin,
+} from "./plugins/LyricsPlugin"
 export {
     ensureTrackAnalysis,
     getTrackTrims,
@@ -27,6 +45,24 @@ export type {
     UseAutomixOptions,
     AutomixController,
 } from "./automix/useAutomix"
+export type {
+    AudioPlayerPlugin,
+    PluginHookArgs,
+    PluginHookName,
+    PluginHookResult,
+    PluginPlayerContext,
+} from "./core/plugins/PluginInterface"
+export type { AutomixPluginConfig } from "./plugins/AutomixPlugin"
+export type { KeyboardShortcutPluginConfig } from "./plugins/KeyboardShortcutPlugin"
+export type {
+    AnalyticsEventPayload,
+    AnalyticsEventType,
+    AnalyticsPluginConfig,
+} from "./plugins/AnalyticsPlugin"
+export type {
+    LyricsPluginConfig,
+    TimedLyricLine,
+} from "./plugins/LyricsPlugin"
 export type {
     Track,
     TrackTrims,

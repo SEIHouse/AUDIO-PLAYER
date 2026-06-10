@@ -55,6 +55,8 @@ export interface UseAutomixOptions {
      * the next index equals the current one).
      */
     nextTrack: Track | null
+    /** Internal callers can suppress the compatibility warning. */
+    suppressDeprecatedWarning?: boolean
     /**
      * Advance the queue to the next track using the host's normal end-of-track
      * path (deferred play + index change). Must NOT route back through the
@@ -82,9 +84,23 @@ type Phase = "idle" | "preloading" | "fading" | "handoff"
  * playback entirely to the normal end-of-track behavior.
  */
 let fadeUnsupported = false
+let warnedUseAutomixDeprecated = false
+
+function warnUseAutomixDeprecated() {
+    if (warnedUseAutomixDeprecated || typeof console === "undefined") return
+    warnedUseAutomixDeprecated = true
+    // eslint-disable-next-line no-console
+    console.warn(
+        "[AudioPlayer] useAutomix is deprecated. Prefer registering AutomixPlugin through the plugin system."
+    )
+}
 
 export function useAutomix(options: UseAutomixOptions): AutomixController {
     const { engine, enabled, sourceKey, currentTrack, nextTrack } = options
+
+    useEffect(() => {
+        if (!options.suppressDeprecatedWarning) warnUseAutomixDeprecated()
+    }, [options.suppressDeprecatedWarning])
 
     const optionsRef = useRef(options)
     optionsRef.current = options

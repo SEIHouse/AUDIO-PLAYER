@@ -12,8 +12,10 @@ import type {
     ReactNode,
 } from "react"
 import type { AudioPlayerProps, RepeatMode, Track } from "./types"
+import type { AudioPlayerPlugin, PluginPlayerContext } from "./core/plugins/PluginInterface"
 import { useAudioPlayer } from "./useAudioPlayer"
 import { useAutomix } from "./automix/useAutomix"
+import { usePluginManager } from "./core/plugins/usePluginManager"
 import { ProgressBar } from "./components/ProgressBar"
 import { VolumeControl } from "./components/VolumeControl"
 import { formatTime } from "./utils/formatTime"
@@ -22,6 +24,7 @@ import "./audio-player.css"
 
 const DEFAULT_AUDIO =
     "https://framerusercontent.com/assets/8w3IUatLX9a5JVJ6XPCVuHi94.mp3"
+const EMPTY_PLUGINS: readonly AudioPlayerPlugin[] = []
 
 function buildPlaybackOrder(length: number, startIndex: number, shuffle: boolean): number[] {
     const indices = Array.from({ length }, (_, i) => i)
@@ -118,6 +121,7 @@ function AudioPlayerInner(props: AudioPlayerProps) {
         progressColor = "#FFFFFF",
         trackColor = "rgba(204, 204, 204, 0.35)",
         backgroundColor = "rgba(255, 255, 255, 0)",
+        plugins: externalPlugins = EMPTY_PLUGINS,
         className,
         style,
     } = props
@@ -284,7 +288,6 @@ function AudioPlayerInner(props: AudioPlayerProps) {
         autoplayBlocked,
         toggle,
         seek,
-        seekBy,
         setSeeking,
         setVolume,
         toggleMute,
@@ -349,6 +352,14 @@ function AudioPlayerInner(props: AudioPlayerProps) {
         automixNextIndex !== null && automixNextIndex !== trackIndex
             ? tracks[automixNextIndex] ?? null
             : null
+    const pluginNextIndex =
+        isPlaylistMode && localRepeatMode !== "one"
+            ? stepTrackIndex(trackIndex, 1)
+            : null
+    const pluginNextTrack =
+        pluginNextIndex !== null && pluginNextIndex !== trackIndex
+            ? tracks[pluginNextIndex] ?? null
+            : null
 
     const automixCtl = useAutomix({
         engine,
@@ -357,11 +368,126 @@ function AudioPlayerInner(props: AudioPlayerProps) {
         currentTrack,
         nextTrack: automixNextTrack,
         requestAdvance,
+        suppressDeprecatedWarning: true,
     })
+
+    const pluginContextStateRef = useRef({
+        engine,
+        currentTrack: currentTrack as Track | null,
+        nextTrack: pluginNextTrack as Track | null,
+        sourceKey,
+        tracks,
+        trackIndex,
+        repeatMode: localRepeatMode,
+        shuffle: localShuffle,
+        requestAdvance,
+        nextTrackFn: nextTrack,
+        previousTrackFn: previousTrack,
+    })
+    pluginContextStateRef.current = {
+        engine,
+        currentTrack,
+        nextTrack: pluginNextTrack,
+        sourceKey,
+        tracks,
+        trackIndex,
+        repeatMode: localRepeatMode,
+        shuffle: localShuffle,
+        requestAdvance,
+        nextTrackFn: nextTrack,
+        previousTrackFn: previousTrack,
+    }
+
+    const pluginContext = useMemo<PluginPlayerContext>(
+        () => ({
+            getEngine: () => pluginContextStateRef.current.engine,
+            getRootElement: () => rootRef.current,
+            getAudioElement: () => pluginContextStateRef.current.engine.audioRef.current,
+            getCurrentTrack: () => pluginContextStateRef.current.currentTrack,
+            getNextTrack: () => pluginContextStateRef.current.nextTrack,
+            getSourceKey: () => pluginContextStateRef.current.sourceKey,
+            requestAdvance: () => pluginContextStateRef.current.requestAdvance(),
+            next: () => pluginContextStateRef.current.nextTrackFn(),
+            previous: () => pluginContextStateRef.current.previousTrackFn(),
+            getQueue: () => pluginContextStateRef.current.tracks,
+            getCurrentIndex: () => pluginContextStateRef.current.trackIndex,
+            getRepeatMode: () => pluginContextStateRef.current.repeatMode,
+            getShuffle: () => pluginContextStateRef.current.shuffle,
+        }),
+        []
+    )
+    const pluginManager = usePluginManager(externalPlugins, pluginContext)
+    const hasKeyboardShortcutPlugin = externalPlugins.some(
+        (plugin) => plugin.handlesKeyboardShortcuts
+    )
 
     advanceRef.current = () => {
         if (automixCtl.handleTrackEnded()) return
+        if (pluginManager.triggerUntilHandled("onTrackEnded", currentTrack)) return
         advanceToNextRef.current()
+    }
+
+    useEffect(() => {
+        pluginManager.trigger("onTrackLoad", currentTrack)
+    }, [pluginManager, sourceKey, currentTrack])
+
+    const previousPluginPlayingRef = useRef(isPlaying)
+    useEffect(() => {
+        if (previousPluginPlayingRef.current === isPlaying) return
+        previousPluginPlayingRef.current = isPlaying
+        pluginManager.trigger(isPlaying ? "onPlay" : "onPause")
+    }, [pluginManager, isPlaying])
+
+    useEffect(() => {
+        pluginManager.trigger("onTimeUpdate", currentTime)
+    }, [pluginManager, currentTime])
+
+    useEffect(() => {
+        if (!hasAudio) pluginManager.trigger("onStop")
+    }, [pluginManager, hasAudio])
+
+    useEffect(() => () => {
+        pluginManager.trigger("onStop")
+    }, [pluginManager])
+
+    const seekWithPlugins = useCallback(
+        (time: number) => {
+            const next = duration > 0 ? Math.max(0, Math.min(duration, time)) : time
+            seek(time)
+            pluginManager.trigger("onSeek", next)
+        },
+        [duration, pluginManager, seek]
+    )
+
+    const seekByWithPlugins = useCallback(
+        (delta: number) => {
+            const base = audioRef.current?.currentTime ?? currentTime
+            seekWithPlugins(base + delta)
+        },
+        [audioRef, currentTime, seekWithPlugins]
+    )
+
+    const pluginAwareEngine = useMemo(
+        () => ({
+            ...engine,
+            seek: seekWithPlugins,
+            seekBy: seekByWithPlugins,
+        }),
+        [engine, seekByWithPlugins, seekWithPlugins]
+    )
+
+    pluginContextStateRef.current = {
+        engine: pluginAwareEngine,
+        currentTrack,
+        nextTrack: pluginNextTrack,
+        sourceKey,
+        tracks,
+        trackIndex,
+        repeatMode: localRepeatMode,
+        shuffle: localShuffle,
+        requestAdvance,
+        nextTrackFn: nextTrack,
+        previousTrackFn: previousTrack,
     }
 
     const toggleLyrics = useCallback(() => setShowLyrics((v) => !v), [])
@@ -492,6 +618,7 @@ function AudioPlayerInner(props: AudioPlayerProps) {
     // actual button is left to the button, preventing double-triggering.
     const handleRootKeyDown = useCallback(
         (event: KeyboardEvent<HTMLDivElement>) => {
+            if (hasKeyboardShortcutPlugin) return
             const target = event.target as HTMLElement
             const onInteractive = !!target.closest(
                 "button, a, input, [role='slider']"
@@ -503,10 +630,10 @@ function AudioPlayerInner(props: AudioPlayerProps) {
                 toggle()
             } else if (key === "j") {
                 event.preventDefault()
-                seekBy(-10)
+                seekByWithPlugins(-10)
             } else if (key === "l") {
                 event.preventDefault()
-                seekBy(10)
+                seekByWithPlugins(10)
             } else if (key === "n" && isPlaylistMode) {
                 event.preventDefault()
                 nextTrack()
@@ -515,7 +642,7 @@ function AudioPlayerInner(props: AudioPlayerProps) {
                 previousTrack()
             }
         },
-        [isPlaylistMode, nextTrack, previousTrack, seekBy, toggle]
+        [hasKeyboardShortcutPlugin, isPlaylistMode, nextTrack, previousTrack, seekByWithPlugins, toggle]
     )
 
     // Track which play/pause transitions we have *already* announced so we
@@ -608,8 +735,8 @@ function AudioPlayerInner(props: AudioPlayerProps) {
             pause: () => engine.pause(),
             previoustrack: () => previousTrack(),
             nexttrack: () => nextTrack(),
-            seekbackward: () => seekBy(-10),
-            seekforward: () => seekBy(10),
+            seekbackward: () => seekByWithPlugins(-10),
+            seekforward: () => seekByWithPlugins(10),
             stop: () => engine.pause(),
         }
         for (const action of actions) {
@@ -903,7 +1030,7 @@ function AudioPlayerInner(props: AudioPlayerProps) {
                         buffered={buffered}
                         disabled={!hasAudio}
                         isSeeking={isSeeking}
-                        onSeek={seek}
+                        onSeek={seekWithPlugins}
                         onSeekStart={() => setSeeking(true)}
                         onSeekEnd={() => setSeeking(false)}
                     />
@@ -940,7 +1067,7 @@ function AudioPlayerInner(props: AudioPlayerProps) {
                     <button
                         type="button"
                         className="ap-btn ap-btn--ghost ap-tap"
-                        onClick={() => seekBy(-10)}
+                        onClick={() => seekByWithPlugins(-10)}
                         disabled={!hasAudio}
                         aria-label="Skip backward 10 seconds"
                     >
@@ -974,7 +1101,7 @@ function AudioPlayerInner(props: AudioPlayerProps) {
                     <button
                         type="button"
                         className="ap-btn ap-btn--ghost ap-tap"
-                        onClick={() => seekBy(10)}
+                        onClick={() => seekByWithPlugins(10)}
                         disabled={!hasAudio}
                         aria-label="Skip forward 10 seconds"
                     >

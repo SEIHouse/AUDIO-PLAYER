@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react"
+import type { AudioPlayerPlugin } from "./core/plugins/PluginInterface"
 
 /** A single playable track. */
 export interface Track {
@@ -60,6 +61,8 @@ export interface AudioPlayerProps extends AudioPlayerTheme {
     repeatMode?: RepeatMode
     /** Initial Automix Lite (crossfade transitions) state. Playlist mode only. */
     automix?: boolean
+    /** Optional lifecycle plugins. Empty by default. */
+    plugins?: readonly AudioPlayerPlugin[]
 
     /** Presentation. */
     backgroundImage?: BackgroundImage
@@ -235,4 +238,6 @@ export interface AudioSessionProviderProps {
     shuffle?: boolean
     /** Initial Automix Lite state. Defaults to false. */
     automix?: boolean
+    /** Optional lifecycle plugins for the shared session. Empty by default. */
+    plugins?: readonly AudioPlayerPlugin[]
 }
