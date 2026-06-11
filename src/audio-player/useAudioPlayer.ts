@@ -675,6 +675,10 @@ export function useAudioPlayer(
     }, [])
 
     const getBackendInfo = useCallback(() => backendRef.current!.getInfo(), [])
+    const getDecodedData = useCallback(
+        () => backendRef.current!.getDecodedData(),
+        []
+    )
 
     return {
         audioRef,
@@ -707,5 +711,6 @@ export function useAudioPlayer(
         unload,
         fade,
         getBackendInfo,
+        getDecodedData,
     }
 }

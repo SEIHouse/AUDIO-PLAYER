@@ -498,6 +498,10 @@ export class WebAudioBackend implements AudioBackend {
         return this.lastError
     }
 
+    getDecodedData(): AudioBuffer | null {
+        return this.buffer
+    }
+
     addEventListener(event: AudioBackendEvent, handler: () => void): void {
         let handlers = this.listeners.get(event)
         if (!handlers) {

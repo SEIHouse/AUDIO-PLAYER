@@ -31,6 +31,8 @@ export { trackKey } from "./utils/trackKey"
 export { checkCodecSupport } from "./utils/checkCodecSupport"
 export { ProgressBar } from "./components/ProgressBar"
 export { VolumeControl } from "./components/VolumeControl"
+export { WaveformProgress } from "./components/WaveformProgress"
+export { extractPeaks, computePeaksFromUrl } from "./core/waveform/peaks"
 
 // Global session (one <audio> element + shared queue) and the UI skins that
 // read from it.
@@ -63,6 +65,8 @@ export type {
     AudioBackendInfo,
     AudioBackendCapabilities,
 } from "./core/audio/AudioBackend"
+export type { WaveformProgressProps } from "./components/WaveformProgress"
+export type { ComputedPeaks } from "./core/waveform/peaks"
 export type { AutomixPluginConfig } from "./plugins/AutomixPlugin"
 export type { KeyboardShortcutPluginConfig } from "./plugins/KeyboardShortcutPlugin"
 export type {

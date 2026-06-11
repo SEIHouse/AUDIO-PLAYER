@@ -17,6 +17,7 @@ import { useAudioPlayer } from "./useAudioPlayer"
 import { useAutomix } from "./automix/useAutomix"
 import { usePluginManager } from "./core/plugins/usePluginManager"
 import { ProgressBar } from "./components/ProgressBar"
+import { WaveformProgress } from "./components/WaveformProgress"
 import { VolumeControl } from "./components/VolumeControl"
 import { formatTime } from "./utils/formatTime"
 import { trackKey } from "./utils/trackKey"
@@ -113,6 +114,8 @@ function AudioPlayerInner(props: AudioPlayerProps) {
         darkenAmount = 0,
         showTracklist = false,
         showVolume = true,
+        showWaveform = false,
+        waveformHeight = 48,
         titleFont,
         artistFont,
         accentColor = "#FFFFFF",
@@ -1028,16 +1031,44 @@ function AudioPlayerInner(props: AudioPlayerProps) {
                 </div>
 
                 <div className="ap-progress-group" role="group" aria-label="Playback progress">
-                    <ProgressBar
-                        currentTime={currentTime}
-                        duration={duration}
-                        buffered={buffered}
-                        disabled={!hasAudio}
-                        isSeeking={isSeeking}
-                        onSeek={seekWithPlugins}
-                        onSeekStart={() => setSeeking(true)}
-                        onSeekEnd={() => setSeeking(false)}
-                    />
+                    {showWaveform ? (
+                        <WaveformProgress
+                            currentTime={currentTime}
+                            duration={duration}
+                            buffered={buffered}
+                            disabled={!hasAudio}
+                            isSeeking={isSeeking}
+                            onSeek={seekWithPlugins}
+                            onSeekStart={() => setSeeking(true)}
+                            onSeekEnd={() => setSeeking(false)}
+                            peaks={currentTrack.peaks}
+                            peaksDuration={currentTrack.waveformDuration}
+                            getDecodedData={engine.getDecodedData}
+                            // Only the streaming backend needs the second
+                            // fetch+decode; webaudio supplies decoded PCM.
+                            url={
+                                engine.getBackendInfo().active === "html5"
+                                    ? src
+                                    : undefined
+                            }
+                            sourceKey={sourceKey}
+                            height={waveformHeight}
+                            waveColor={trackColor}
+                            progressColor={progressColor}
+                            cursorColor={accentColor}
+                        />
+                    ) : (
+                        <ProgressBar
+                            currentTime={currentTime}
+                            duration={duration}
+                            buffered={buffered}
+                            disabled={!hasAudio}
+                            isSeeking={isSeeking}
+                            onSeek={seekWithPlugins}
+                            onSeekStart={() => setSeeking(true)}
+                            onSeekEnd={() => setSeeking(false)}
+                        />
+                    )}
                     <div className="ap-times" aria-hidden="true">
                         <span>{formatTime(currentTime)}</span>
                         <span>{formatTime(duration)}</span>

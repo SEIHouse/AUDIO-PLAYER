@@ -1,7 +1,7 @@
 {
   "name": "seihouse-audio-player",
   "version": "1.0.0",
-  "description": "Portable, zero-dependency custom audio player (React + TypeScript)",
+  "description": "Portable custom audio player (React + TypeScript) with optional lazy-loaded wavesurfer.js waveforms",
   "type": "module",
   "main": "src/audio-player/index.ts",
   "scripts": {
@@ -25,5 +25,8 @@
     "typescript": "^5.5.3",
     "vite": "^8.0.16"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "wavesurfer.js": "^7.12.7"
+  }
 }
