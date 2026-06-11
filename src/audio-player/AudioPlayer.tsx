@@ -30,6 +30,32 @@ const DEFAULT_AUDIO =
     "https://framerusercontent.com/assets/8w3IUatLX9a5JVJ6XPCVuHi94.mp3"
 const EMPTY_PLUGINS: readonly AudioPlayerPlugin[] = []
 
+
+function trackPeaksSignature(peaks: Track["peaks"]): string {
+    if (!peaks) return ""
+    return peaks
+        .map((channel) => {
+            const last = channel.length > 0 ? channel[channel.length - 1] : ""
+            return `${channel.length}:${channel[0] ?? ""}:${last}`
+        })
+        .join(",")
+}
+
+function trackListSignature(tracks: Track[]): string {
+    return JSON.stringify(
+        tracks.map((track) => [
+            trackKey(track),
+            track.title ?? "",
+            track.artist ?? "",
+            track.audioFile ?? "",
+            track.purchaseUrl ?? "",
+            track.lyrics ?? "",
+            track.waveformDuration ?? null,
+            trackPeaksSignature(track.peaks),
+        ])
+    )
+}
+
 function buildPlaybackOrder(length: number, startIndex: number, shuffle: boolean): number[] {
     const indices = Array.from({ length }, (_, i) => i)
     if (!shuffle || length <= 1) return indices
@@ -134,20 +160,7 @@ function AudioPlayerInner(props: AudioPlayerProps) {
     } = props
 
     const tracks = resolveTrackList(tracksProp)
-    const tracksSignature = useMemo(
-        () =>
-            tracks
-                .map((track) =>
-                    JSON.stringify([
-                        trackKey(track),
-                        track.audioFile ?? "",
-                        track.title ?? "",
-                        track.artist ?? "",
-                    ])
-                )
-                .join("|"),
-        [tracks]
-    )
+    const tracksSignature = useMemo(() => trackListSignature(tracks), [tracks])
     const isPlaylistMode = tracks.length > 0
     const [trackIndex, setTrackIndex] = useState(0)
     const [showLyrics, setShowLyrics] = useState(false)
@@ -168,18 +181,20 @@ function AudioPlayerInner(props: AudioPlayerProps) {
     const menuButtonRef = useRef<HTMLButtonElement>(null)
     const menuItemRefs = useRef<Array<HTMLButtonElement | null>>([])
     const shareTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const previousTracksSignatureRef = useRef(tracksSignature)
 
     // Sync localQueue only when the logical track list changes. Parent renders
     // often recreate the array instance; resetting on identity alone would wipe
     // local queue edits such as reorder/remove.
     useEffect(() => {
+        if (previousTracksSignatureRef.current === tracksSignature) return
+        previousTracksSignatureRef.current = tracksSignature
         setLocalQueue(tracks)
         setTrackIndex((index) => {
             if (tracks.length === 0) return 0
             return Math.min(index, tracks.length - 1)
         })
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tracksSignature])
+    }, [tracks, tracksSignature])
 
     useEffect(() => {
         return () => {
