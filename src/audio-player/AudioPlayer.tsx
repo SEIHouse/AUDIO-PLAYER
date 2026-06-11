@@ -22,6 +22,7 @@ import { WaveformProgress } from "./components/WaveformProgress"
 import { VolumeControl } from "./components/VolumeControl"
 import { QueueDrawer } from "./components/QueueDrawer"
 import { formatTime } from "./utils/formatTime"
+import { resolveTrackList } from "./utils/trackList"
 import { trackKey } from "./utils/trackKey"
 import "./audio-player.css"
 
@@ -100,7 +101,7 @@ export function AudioPlayer(props: AudioPlayerProps) {
 
 function AudioPlayerInner(props: AudioPlayerProps) {
     const {
-        tracks = [],
+        tracks: tracksProp,
         audioFile = DEFAULT_AUDIO,
         title = "Audio Track",
         artist = "Artist Name",
@@ -132,6 +133,7 @@ function AudioPlayerInner(props: AudioPlayerProps) {
         style,
     } = props
 
+    const tracks = resolveTrackList(tracksProp)
     const isPlaylistMode = tracks.length > 0
     const [trackIndex, setTrackIndex] = useState(0)
     const [showLyrics, setShowLyrics] = useState(false)
