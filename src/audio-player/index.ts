@@ -24,6 +24,10 @@ export {
     createLyricsPlugin,
 } from "./plugins/LyricsPlugin"
 export {
+    SleepTimerPlugin,
+    createSleepTimerPlugin,
+} from "./plugins/SleepTimerPlugin"
+export {
     ensureTrackAnalysis,
     getTrackTrims,
 } from "./automix/silenceAnalysis"
@@ -109,6 +113,11 @@ export type {
     LyricsPluginConfig,
     TimedLyricLine,
 } from "./plugins/LyricsPlugin"
+export type {
+    SleepTimerPluginConfig,
+    SleepTimerPreset,
+    SleepTimerState,
+} from "./plugins/SleepTimerPlugin"
 export type { TransitionPlan } from "./automix/transitionPlanner"
 export type {
     Track,

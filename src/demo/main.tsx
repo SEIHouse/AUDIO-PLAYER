@@ -13,6 +13,7 @@ import {
     createAutomixProPlugin,
     createKeyboardShortcutPlugin,
     createLyricsPlugin,
+    createSleepTimerPlugin,
     formatTime,
     getTrackAnalysis,
     useAudioPlayer,
@@ -863,6 +864,7 @@ function PluginArchitectureSection() {
                     setActiveLyric(line?.text ?? "Waiting for playback…")
                 },
             }),
+            createSleepTimerPlugin({ name: "demo-triple-sleep-timer" }),
         ],
         []
     )
@@ -871,12 +873,12 @@ function PluginArchitectureSection() {
         <section className="lab-section">
             <h2 className="lab-section__title">
                 9. Plugin architecture
-                <small>0 · 1 · 3 plugins</small>
+                <small>0 · 1 · 4 plugins</small>
             </h2>
             <p className="lab-section__desc">
                 These players exercise the new lifecycle plugin system. One runs
                 with no plugins, one registers keyboard shortcuts, and one stacks
-                keyboard, analytics, and lyric-sync plugins. Plugin failures are
+                keyboard, analytics, lyric-sync, and sleep-timer plugins. Plugin failures are
                 isolated by the manager so playback stays stable.
             </p>
             <div className="lab-section__grid">
@@ -916,10 +918,10 @@ function PluginArchitectureSection() {
                         </div>
                     </div>
                     <div className="lab-state">
-                        <h3 className="lab-state__title">3 plugins</h3>
+                        <h3 className="lab-state__title">4 plugins</h3>
                         <p className="lab-state__desc">
-                            Keyboard shortcuts, analytics callbacks, and lyric
-                            synchronization run together.
+                            Keyboard shortcuts, analytics callbacks, lyric
+                            synchronization, and sleep timer UI run together.
                         </p>
                         <div className="lab-state__player">
                             <AudioPlayer
