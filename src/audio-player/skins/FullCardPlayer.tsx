@@ -8,7 +8,7 @@ import { SAPController } from "../components/SAPController"
 import { useShareTrack } from "../components/useShareTrack"
 import { formatTime } from "../utils/formatTime"
 import { buildThemeVars } from "./themeVars"
-import { renderSessionProgress } from "./renderSessionProgress"
+import { SessionProgress } from "./renderSessionProgress"
 import {
     Back10Icon,
     DotsIcon,
@@ -206,11 +206,12 @@ export function FullCardPlayer({
             </div>
 
             <div className="ap-progress-group" role="group" aria-label="Playback progress">
-                {renderSessionProgress(s, {
-                    hostId: "full-card",
-                    height: 48,
-                    ...theme,
-                })}
+                <SessionProgress
+                    session={s}
+                    hostId="full-card"
+                    height={48}
+                    {...theme}
+                />
                 <div className="ap-times" aria-hidden="true">
                     <span>{formatTime(currentTime)}</span>
                     <span>{formatTime(duration)}</span>

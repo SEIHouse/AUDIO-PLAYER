@@ -8,7 +8,7 @@ import { SAPController } from "../components/SAPController"
 import { useShareTrack } from "../components/useShareTrack"
 import { formatTime } from "../utils/formatTime"
 import { buildThemeVars } from "./themeVars"
-import { renderSessionProgress } from "./renderSessionProgress"
+import { SessionProgress } from "./renderSessionProgress"
 import {
     Back10Icon,
     DotsIcon,
@@ -177,11 +177,12 @@ export function StickyBottomPlayer({
                     </div>
                     <div className="ap-sb__scrub">
                         <span className="ap-sb__t" aria-hidden="true">{formatTime(s.currentTime)}</span>
-                        {renderSessionProgress(s, {
-                            hostId: "sticky-bottom",
-                            height: 24,
-                            ...theme,
-                        })}
+                        <SessionProgress
+                            session={s}
+                            hostId="sticky-bottom"
+                            height={24}
+                            {...theme}
+                        />
                         <span className="ap-sb__t" aria-hidden="true">{formatTime(s.duration)}</span>
                     </div>
                 </div>

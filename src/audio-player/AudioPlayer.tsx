@@ -368,13 +368,9 @@ function AudioPlayerInner(props: AudioPlayerProps) {
             showWaveform
                 ? createWaveformPlugin({
                       name: "legacy-waveform",
-                      height: waveformHeight,
-                      waveColor: trackColor,
-                      progressColor,
-                      cursorColor: accentColor,
                   })
                 : null,
-        [accentColor, progressColor, showWaveform, trackColor, waveformHeight]
+        [showWaveform]
     )
     const activePlugins = useMemo<readonly AudioPlayerPlugin[]>(() => {
         const plugins: AudioPlayerPlugin[] = []

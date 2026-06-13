@@ -1,22 +1,25 @@
+import { useCallback } from "react"
 import type { AudioPlayerTheme, SessionEngine } from "../types"
 import { ProgressBar } from "../components/ProgressBar"
 
-interface RenderSessionProgressOptions extends AudioPlayerTheme {
+interface SessionProgressProps extends AudioPlayerTheme {
+    session: SessionEngine
     hostId: string
     height?: number
 }
 
-export function renderSessionProgress(
-    session: SessionEngine,
-    {
-        hostId,
-        height,
-        accentColor,
-        progressColor,
-        trackColor,
-    }: RenderSessionProgressOptions
-) {
+export function SessionProgress({
+    session,
+    hostId,
+    height,
+    accentColor,
+    progressColor,
+    trackColor,
+}: SessionProgressProps) {
     const currentTrack = session.currentTrack
+    const handleSeekStart = useCallback(() => session.setSeeking(true), [session])
+    const handleSeekEnd = useCallback(() => session.setSeeking(false), [session])
+
     const rendered = session.renderPluginSlot("progress", {
         hostId,
         currentTime: session.currentTime,
@@ -25,8 +28,8 @@ export function renderSessionProgress(
         disabled: !session.hasAudio,
         isSeeking: session.isSeeking,
         onSeek: session.seek,
-        onSeekStart: () => session.setSeeking(true),
-        onSeekEnd: () => session.setSeeking(false),
+        onSeekStart: handleSeekStart,
+        onSeekEnd: handleSeekEnd,
         currentTrack,
         sourceKey: session.sourceKey,
         peaks: currentTrack?.peaks,
@@ -50,8 +53,8 @@ export function renderSessionProgress(
             disabled={!session.hasAudio}
             isSeeking={session.isSeeking}
             onSeek={session.seek}
-            onSeekStart={() => session.setSeeking(true)}
-            onSeekEnd={() => session.setSeeking(false)}
+            onSeekStart={handleSeekStart}
+            onSeekEnd={handleSeekEnd}
         />
     )
 }

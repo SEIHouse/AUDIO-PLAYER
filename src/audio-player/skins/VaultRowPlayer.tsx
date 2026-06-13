@@ -4,7 +4,7 @@ import { useAudioSession } from "../session/AudioSessionContext"
 import { formatTime } from "../utils/formatTime"
 import { trackKey } from "../utils/trackKey"
 import { buildThemeVars } from "./themeVars"
-import { renderSessionProgress } from "./renderSessionProgress"
+import { SessionProgress } from "./renderSessionProgress"
 import { PauseIcon, PlayIcon, SpinnerIcon } from "./icons"
 import "./skins.css"
 
@@ -73,11 +73,12 @@ export function VaultRowPlayer({
                 </span>
                 {isActive ? (
                     <span className="ap-vr__progress">
-                        {renderSessionProgress(s, {
-                            hostId: "vault-row",
-                            height: 24,
-                            ...theme,
-                        })}
+                        <SessionProgress
+                            session={s}
+                            hostId="vault-row"
+                            height={24}
+                            {...theme}
+                        />
                     </span>
                 ) : (
                     <span className="ap-vr__artist" title={track.artist}>
