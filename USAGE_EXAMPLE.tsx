@@ -7,6 +7,7 @@ import {
   StickyBottomPlayer,
   useAudioSession,
   AudioSessionProvider,
+  PluginRegistryProvider,
   createAutomixPlugin,
   createKeyboardShortcutPlugin,
   createWaveformPlugin,
@@ -19,7 +20,9 @@ const tracks = [
     id: 'track-1',
     title: 'Song Title',
     artist: 'Artist Name',
-    audioFile: 'https://example.com/audio.mp3',
+    albumArt: 'https://example.com/cover.jpg',
+    src: 'https://example.com/audio.mp3',
+    duration: 240, // seconds
   },
   // ... more tracks
 ]
@@ -31,8 +34,11 @@ export function MyApp() {
       <h1>My Music App</h1>
       <AudioPlayer
         tracks={tracks}
-        accentColor="#6366f1"
-        backgroundColor="#0f172a"
+        initialTrackId={tracks[0].id}
+        theme={{
+          primaryColor: '#6366f1',
+          backgroundColor: '#0f172a',
+        }}
       />
     </div>
   )
@@ -87,6 +93,8 @@ export function AppWithPlugins() {
   ]
 
   return (
-    <AudioPlayer tracks={tracks} plugins={plugins} />
+    <PluginRegistryProvider plugins={plugins}>
+      <AudioPlayer tracks={tracks} />
+    </PluginRegistryProvider>
   )
 }
