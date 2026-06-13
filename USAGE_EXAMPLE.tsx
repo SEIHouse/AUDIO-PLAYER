@@ -5,7 +5,8 @@ import {
   AudioPlayer, 
   FullCardPlayer, 
   StickyBottomPlayer,
-  useAudioSession 
+  useAudioSession,
+  AudioSessionProvider
 } from '@seihouse/audio-player'
 import '@seihouse/audio-player/styles.css'
 
@@ -42,12 +43,12 @@ export function MyApp() {
 // Usage with session provider for multiple player instances
 export function MultiPlayerApp() {
   return (
-    <AudioPlayerProvider>
+    <AudioSessionProvider>
       <Header />
       <MainContent />
       {/* Sticky player at bottom */}
       <StickyBottomPlayer />
-    </AudioPlayerProvider>
+    </AudioSessionProvider>
   )
 }
 

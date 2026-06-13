@@ -26,6 +26,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc && vite build",
     "build:lib": "vite build --config vite.lib.config.ts",
+    "prepare": "npm run build:lib",
     "prepublishOnly": "npm run typecheck && npm run build:lib",
     "preview": "vite preview --host 0.0.0.0",
     "preview:smoke": "node scripts/preview-smoke-test.mjs",
@@ -38,6 +39,7 @@
     "react-dom": ">=18"
   },
   "devDependencies": {
+    "@microsoft/api-extractor": "^7.58.9",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^6.0.2",
