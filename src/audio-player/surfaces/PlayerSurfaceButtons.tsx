@@ -8,7 +8,11 @@ export interface PlayerSurfaceButtonsProps {
     surface: UsePlayerSurfaceResult
     /** Left (canvas) button. Defaults to the face's declared canvas support. */
     showCanvasButton?: boolean
-    /** Right (action menu) trigger. Shown on every face by default. */
+    /**
+     * Right (action menu) trigger — the contextual radial menu. Defaults to the
+     * face's declared `supportsContextualActions` capability, so it is the model,
+     * not this component, that decides whether the menu appears.
+     */
     showQueueButton?: boolean
     /**
      * What the menu's "Up Next" leaf opens. Faces with a full queue drawer pass
@@ -28,7 +32,7 @@ export interface PlayerSurfaceButtonsProps {
 export function PlayerSurfaceButtons({
     surface,
     showCanvasButton = surface.canvasSupported,
-    showQueueButton = true,
+    showQueueButton = surface.contextualSupported,
     onOpenQueue,
     className,
 }: PlayerSurfaceButtonsProps) {
