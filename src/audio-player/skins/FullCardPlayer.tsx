@@ -211,7 +211,7 @@ export function FullCardPlayer({
 
             <div
                 className="ap-fc__stage"
-                data-surface-open={surface.mode === "default" ? "false" : "true"}
+                data-surface-open={surface.mode !== "default"}
             >
                 <PlayerHero
                     face="fullCard"

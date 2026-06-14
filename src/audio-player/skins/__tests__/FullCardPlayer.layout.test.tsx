@@ -27,6 +27,8 @@ describe("FullCardPlayer layout", () => {
 
         const stageStart = html.indexOf('class="ap-fc__stage"')
         const stageEnd = html.indexOf('class="ap-fc__control-dock"')
+        expect(stageStart).toBeLessThan(stageEnd)
+
         const stageHtml = html.slice(stageStart, stageEnd)
         const dockHtml = html.slice(stageEnd)
 
