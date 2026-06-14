@@ -1,7 +1,9 @@
+import { useMemo } from "react"
 import { CanvasIcon } from "../skins/icons"
 import { SurfaceButton } from "./SurfaceButton"
 import { SEICanvasActionMenu } from "./SEICanvasActionMenu"
 import { buildMenuTree } from "../menu/menuData"
+import type { MenuNode } from "../menu/menuData"
 import type { UsePlayerSurfaceResult } from "./usePlayerSurface"
 
 export interface PlayerSurfaceButtonsProps {
@@ -36,11 +38,21 @@ export function PlayerSurfaceButtons({
     onOpenQueue,
     className,
 }: PlayerSurfaceButtonsProps) {
+    // Built only when the contextual menu is actually rendered, and memoized so
+    // it isn't rebuilt on every parent playback tick (skins re-render multiple
+    // times per second during active playback). Hooks must run before the early
+    // return below, so this stays unconditional.
+    const menuItems = useMemo<MenuNode[]>(
+        () =>
+            showQueueButton
+                ? buildMenuTree({
+                      canvasSupported: surface.canvasSupported,
+                      isCanvasActive: surface.isCanvasOpen,
+                  })
+                : [],
+        [showQueueButton, surface.canvasSupported, surface.isCanvasOpen]
+    )
     if (!showCanvasButton && !showQueueButton) return null
-    const menuItems = buildMenuTree({
-        canvasSupported: surface.canvasSupported,
-        isCanvasActive: surface.isCanvasOpen,
-    })
     return (
         <div
             className={`ap-surface-actions${className ? ` ${className}` : ""}`}
