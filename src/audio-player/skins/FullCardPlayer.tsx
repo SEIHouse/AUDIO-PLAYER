@@ -9,6 +9,7 @@ import { SAPController } from "../components/SAPController"
 import { useShareTrack } from "../components/useShareTrack"
 import { formatTime } from "../utils/formatTime"
 import { defaultShowVolume } from "../utils/device"
+import { trackKey } from "../utils/trackKey"
 import { useMediaSessionObserver } from "../headless/useMediaSessionObserver"
 import { buildThemeVars } from "./themeVars"
 import { usePlayerSurface } from "../surfaces/usePlayerSurface"
@@ -96,7 +97,7 @@ export function FullCardPlayer({
     useMediaSessionObserver(s, {
         title: currentTrack?.title ?? "",
         artist: currentTrack?.artist ?? "",
-        sourceKey: currentTrack ? `${currentIndex}` : "empty",
+        sourceKey: currentTrack ? `${currentIndex}:${trackKey(currentTrack)}` : "empty",
         onNext: canNext ? s.next : undefined,
         onPrevious: canPrevious ? s.previous : undefined,
     })
