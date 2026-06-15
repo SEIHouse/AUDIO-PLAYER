@@ -245,6 +245,30 @@
     font-weight: 500;
 }
 
+/* Focused-workspace body (non-"options" routes). Shares the sheet chrome; the
+   content slot holds the route-specific placeholder surface for now. */
+.sap-ctl__workspace {
+    padding: 4px 0 8px;
+}
+.sap-ctl__workspace-empty {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 24px 14px 28px;
+    text-align: center;
+}
+.sap-ctl__workspace-lead {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+}
+.sap-ctl__workspace-sub {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.5;
+    opacity: 0.6;
+}
+
 @keyframes sap-sheet-in {
     from {
         transform: translateY(24px);

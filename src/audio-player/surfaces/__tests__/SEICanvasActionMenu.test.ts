@@ -75,4 +75,26 @@ describe("buildMenuTree", () => {
         expect(isNodeInteractive(findNode(tree, "up-next")!)).toBe(true)
         expect(isNodeInteractive(findNode(tree, "lyrics")!)).toBe(true)
     })
+
+    it("attaches the focused workspace route to the leaf nodes", () => {
+        const tree = buildMenuTree({ canvasSupported: true, isCanvasActive: false })
+        // These drive SEICanvasActionMenu's onOpenWorkspace dispatch.
+        expect(findNode(tree, "lyrics")?.workspaceRoute).toBe("plugin-settings:lyrics")
+        expect(findNode(tree, "up-next")?.workspaceRoute).toBe("library:queue")
+        expect(findNode(tree, "automix")?.workspaceRoute).toBe("playback:automix")
+        expect(findNode(tree, "agent")?.workspaceRoute).toBe("agent:queue-director")
+    })
+
+    it("keeps Up Next's legacy open-queue action as a backward-compat fallback", () => {
+        const tree = buildMenuTree({ canvasSupported: true, isCanvasActive: false })
+        // Hosts without onOpenWorkspace still resolve the queue via actionId.
+        expect(findNode(tree, "up-next")?.actionId).toBe("open-queue")
+    })
+
+    it("leaves Canvas on its activate-canvas action with no workspace route", () => {
+        const tree = buildMenuTree({ canvasSupported: true, isCanvasActive: false })
+        const canvas = findNode(tree, "canvas")!
+        expect(canvas.actionId).toBe("activate-canvas")
+        expect(canvas.workspaceRoute).toBeUndefined()
+    })
 })

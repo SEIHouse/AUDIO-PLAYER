@@ -1,9 +1,11 @@
-import { useMemo } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { CanvasIcon } from "../skins/icons"
 import { SurfaceButton } from "./SurfaceButton"
 import { SEICanvasActionMenu } from "./SEICanvasActionMenu"
 import { buildMenuTree } from "../menu/menuData"
 import type { MenuNode } from "../menu/menuData"
+import { SAPController } from "../components/SAPController"
+import type { WorkspaceRoute } from "../components/workspace/workspaceRoutes"
 import type { UsePlayerSurfaceResult } from "./usePlayerSurface"
 
 export interface PlayerSurfaceButtonsProps {
@@ -52,6 +54,17 @@ export function PlayerSurfaceButtons({
                 : [],
         [showQueueButton, surface.canvasSupported, surface.isCanvasOpen]
     )
+
+    // The radial menu opens focused workspace routes in the shared SAP Controller
+    // shell. "options" is the closed/default state; a real route opens the sheet.
+    const [controllerRoute, setControllerRoute] = useState<WorkspaceRoute>("options")
+    const [workspaceOpen, setWorkspaceOpen] = useState(false)
+    const handleOpenWorkspace = useCallback((route: WorkspaceRoute) => {
+        setControllerRoute(route)
+        setWorkspaceOpen(true)
+    }, [])
+    const handleCloseWorkspace = useCallback(() => setWorkspaceOpen(false), [])
+
     if (!showCanvasButton && !showQueueButton) return null
     return (
         <div
@@ -75,6 +88,17 @@ export function PlayerSurfaceButtons({
                     items={menuItems}
                     onActivateCanvas={surface.toggleCanvas}
                     onOpenQueue={onOpenQueue ?? surface.toggleQueue}
+                    onOpenWorkspace={handleOpenWorkspace}
+                />
+            )}
+            {/* Workspace shell hosting the route the radial menu chose. The
+                "options" route is never opened here — that stays the face's own
+                three-dot SAPController. */}
+            {showQueueButton && (
+                <SAPController
+                    open={workspaceOpen}
+                    route={controllerRoute}
+                    onClose={handleCloseWorkspace}
                 />
             )}
         </div>

@@ -78,6 +78,29 @@ export type {
 } from "./components/SAPController"
 export { useShareTrack } from "./components/useShareTrack"
 
+// Action Workspace router: the SAP Controller shell, its route model, and the
+// placeholder workspace surfaces the radial menu opens.
+export {
+    WORKSPACE_ROUTES,
+    parseWorkspaceRoute,
+    isWorkspaceRoute,
+} from "./components/workspace/workspaceRoutes"
+export type {
+    WorkspaceRoute,
+    WorkspaceRouteCategory,
+    ParsedWorkspaceRoute,
+} from "./components/workspace/workspaceRoutes"
+export { WorkspaceShell } from "./components/workspace/WorkspaceShell"
+export type { WorkspaceShellProps } from "./components/workspace/WorkspaceShell"
+export { LibraryPlaylistsWorkspace } from "./components/workspace/LibraryPlaylistsWorkspace"
+export { LibraryQueueWorkspace } from "./components/workspace/LibraryQueueWorkspace"
+export { PluginSettingsWorkspace } from "./components/workspace/PluginSettingsWorkspace"
+export type { PluginSettingsWorkspaceProps } from "./components/workspace/PluginSettingsWorkspace"
+export { PlaybackAutomixWorkspace } from "./components/workspace/PlaybackAutomixWorkspace"
+export { AgentQueueDirectorWorkspace } from "./components/workspace/AgentQueueDirectorWorkspace"
+export { VisualLyricsWorkspace } from "./components/workspace/VisualLyricsWorkspace"
+export type { VisualLyricsWorkspaceProps } from "./components/workspace/VisualLyricsWorkspace"
+
 // Headless adapter layer: Downshift-style prop getters and utilities over an
 // existing engine/session — no styling, no second engine.
 export {

@@ -1,4 +1,5 @@
 import type { ComponentType } from "react"
+import type { WorkspaceRoute } from "../components/workspace/workspaceRoutes"
 import {
     AgentIcon,
     AnalyticsIcon,
@@ -57,6 +58,13 @@ export interface MenuNode {
     children?: MenuNode[]
     /** Leaf: resolved against host callbacks (e.g. `"open-queue"`). */
     actionId?: MenuActionId
+    /**
+     * Leaf: the focused workspace this node opens in the SAP Controller shell.
+     * When the host wires `onOpenWorkspace`, this takes precedence over the
+     * legacy `actionId`; without it the node falls back to `actionId`, so the
+     * field is additive and backward compatible.
+     */
+    workspaceRoute?: WorkspaceRoute
 }
 
 export interface BuildMenuTreeOptions {
@@ -98,6 +106,7 @@ export function buildMenuTree({
                             icon: LyricsIcon,
                             state: "inactive",
                             actionId: "select-lyrics",
+                            workspaceRoute: "plugin-settings:lyrics",
                         },
                         {
                             id: "canvas",
@@ -138,12 +147,14 @@ export function buildMenuTree({
                     label: "Up Next",
                     icon: QueueIcon,
                     actionId: "open-queue",
+                    workspaceRoute: "library:queue",
                 },
                 {
                     id: "automix",
                     label: "Automix",
                     icon: AutomixIcon,
                     state: "coming-soon",
+                    workspaceRoute: "playback:automix",
                 },
                 {
                     id: "repeat",
@@ -158,6 +169,7 @@ export function buildMenuTree({
             label: "Agent",
             icon: AgentIcon,
             state: "coming-soon",
+            workspaceRoute: "agent:queue-director",
         },
     ]
 }

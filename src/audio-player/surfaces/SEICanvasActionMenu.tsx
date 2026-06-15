@@ -4,6 +4,7 @@ import { createPortal } from "react-dom"
 import { ChevronLeftIcon, CloseIcon, LockIcon } from "../skins/icons"
 import { isNodeInteractive } from "../menu/menuData"
 import type { MenuNode } from "../menu/menuData"
+import type { WorkspaceRoute } from "../components/workspace/workspaceRoutes"
 import "./sei-canvas-action-menu.css"
 
 /** Radius of the half-circle the nodes fan out on, in px. */
@@ -65,6 +66,13 @@ export interface SEICanvasActionMenuProps {
     onActivateCanvas: () => void
     /** Resolves any other leaf action (and `select-lyrics`). */
     onSelect?: (node: MenuNode) => void
+    /**
+     * Opens a focused workspace route in the SAP Controller shell. When provided,
+     * a node's `workspaceRoute` takes precedence over its legacy `actionId`, so
+     * the radial menu drives the workspace router. Omit it to keep the legacy
+     * `onOpenQueue` / `onActivateCanvas` / `onSelect` behavior unchanged.
+     */
+    onOpenWorkspace?: (route: WorkspaceRoute) => void
     /** Accessible label for the trigger + menu. */
     ariaLabel?: string
     className?: string
@@ -105,6 +113,7 @@ export function SEICanvasActionMenu({
     onOpenQueue,
     onActivateCanvas,
     onSelect,
+    onOpenWorkspace,
     ariaLabel = "Canvas actions",
     className,
 }: SEICanvasActionMenuProps) {
@@ -174,6 +183,13 @@ export function SEICanvasActionMenu({
                 setPath((p) => [...p, node.id])
                 return
             }
+            // A wired host routes leaf nodes to their workspace; the legacy
+            // actions remain the fallback for hosts that don't (backward compat).
+            if (node.workspaceRoute && onOpenWorkspace) {
+                onOpenWorkspace(node.workspaceRoute)
+                close()
+                return
+            }
             switch (node.actionId) {
                 case "open-queue":
                     onOpenQueue()
@@ -186,7 +202,7 @@ export function SEICanvasActionMenu({
             }
             close()
         },
-        [close, onActivateCanvas, onOpenQueue, onSelect]
+        [close, onActivateCanvas, onOpenQueue, onOpenWorkspace, onSelect]
     )
 
     const handleCenter = useCallback(() => {
