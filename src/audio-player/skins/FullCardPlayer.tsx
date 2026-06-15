@@ -145,6 +145,7 @@ export function FullCardPlayer({
             <SAPController
                 open={controllerOpen}
                 onClose={() => setControllerOpen(false)}
+                route="options"
                 playback={{
                     shuffle,
                     onToggleShuffle: s.toggleShuffle,

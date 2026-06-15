@@ -16,6 +16,8 @@ import {
     ShareIcon,
     ShuffleIcon,
 } from "../skins/icons"
+import { WorkspaceShell } from "./workspace/WorkspaceShell"
+import type { WorkspaceRoute } from "./workspace/workspaceRoutes"
 import "./sap-controller.css"
 
 /* The SAP Controller: one shared, screen-level command sheet for the advanced
@@ -59,6 +61,12 @@ export interface SAPControllerShare {
 export interface SAPControllerProps extends AudioPlayerTheme {
     open: boolean
     onClose: () => void
+    /**
+     * Which workspace the sheet renders. Defaults to `"options"`, the legacy
+     * three-dot content. Any other route renders the matching focused workspace
+     * surface through the same portal/focus-trap shell.
+     */
+    route?: WorkspaceRoute
     /** Sections render only when their prop is provided. */
     playback?: SAPControllerPlayback
     queue?: SAPControllerQueue
@@ -117,6 +125,7 @@ const CloseIcon = () => (
 export function SAPController({
     open,
     onClose,
+    route = "options",
     playback,
     queue,
     info,
@@ -153,7 +162,18 @@ export function SAPController({
     useEffect(() => {
         if (!open) return
         const opener = document.activeElement as HTMLElement | null
-        const raf = requestAnimationFrame(() => closeRef.current?.focus())
+        const raf = requestAnimationFrame(() => {
+            // Options renders its own header (closeRef); a workspace route's close
+            // button lives inside WorkspaceShell, so fall back to the first
+            // focusable in the sheet.
+            if (closeRef.current) closeRef.current.focus()
+            else
+                sheetRef.current
+                    ?.querySelector<HTMLElement>(
+                        "button:not([disabled]), [href], [tabindex]:not([tabindex='-1'])"
+                    )
+                    ?.focus()
+        })
         const handleKey = (e: globalThis.KeyboardEvent) => {
             if (e.key === "Escape") onCloseRef.current()
         }
@@ -208,6 +228,8 @@ export function SAPController({
         backgroundColor,
     })
 
+    const isOptions = route === "options"
+
     return createPortal(
         <div className="sap-ctl" style={themeVars}>
             <div className="sap-ctl__backdrop" onClick={onClose} aria-hidden="true" />
@@ -216,10 +238,19 @@ export function SAPController({
                 className="sap-ctl__sheet"
                 role="dialog"
                 aria-modal="true"
-                aria-label="Player options"
+                aria-label={isOptions ? "Player options" : "Player workspace"}
                 onKeyDown={handleTrapKeyDown}
             >
                 <div className="sap-ctl__grab" aria-hidden="true" />
+                {!isOptions && (
+                    <WorkspaceShell
+                        route={route}
+                        onClose={onClose}
+                        lyrics={info?.lyrics}
+                    />
+                )}
+                {isOptions && (
+                <>
                 <header className="sap-ctl__header">
                     <h2 className="sap-ctl__title">Options</h2>
                     <button
@@ -367,6 +398,8 @@ export function SAPController({
                             ))}
                         </ul>
                     </Section>
+                )}
+                </>
                 )}
             </div>
         </div>,
