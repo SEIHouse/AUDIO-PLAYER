@@ -14,13 +14,13 @@ export function PluginManagerPanel() {
         install,
         uninstall,
         toggleActive,
-        activeInstances,
     } = usePluginRegistry()
 
     const installedIds = new Set(installed.map((r) => r.entry.id))
     const availableButNotInstalled = available.filter(
         (e) => !installedIds.has(e.id)
     )
+    const activeCount = installed.filter((r) => r.active).length
 
     return (
         <div className="lab-plugin-manager">
@@ -28,7 +28,7 @@ export function PluginManagerPanel() {
             <div className="lab-plugin-manager__head">
                 <span className="lab-plugin-manager__title">Plugin Registry</span>
                 <span className="lab-plugin-manager__badge">
-                    {activeInstances.length} / {installed.length} active
+                    {activeCount} / {installed.length} active
                 </span>
             </div>
 

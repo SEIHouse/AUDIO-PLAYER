@@ -468,9 +468,15 @@ function WorkshopInner() {
 
     const registry = usePluginRegistry()
     const plugins = registry.activeInstances
+    const waveformScrubberActive = registry.activeScrubberVisualPlugins.some(
+        (plugin) => plugin.id === "waveform-scrubber"
+    )
 
     const face = WORKSHOP_FACES.find((f) => f.id === faceId) ?? WORKSHOP_FACES[0]
-    const preview = face.render({ settings, tracks: noLuckTracks, plugins })
+    const previewSettings = waveformScrubberActive
+        ? { ...settings, showWaveform: true }
+        : settings
+    const preview = face.render({ settings: previewSettings, tracks: noLuckTracks, plugins })
 
     const handleSave = () => {
         const name = presetName.trim()

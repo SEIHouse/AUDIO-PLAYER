@@ -12,6 +12,8 @@ import type { AudioPlayerPlugin } from "../../core/plugins/PluginInterface"
 import {
     createAnalyticsPlugin,
 } from "../AnalyticsPlugin"
+import type { ScrubberVisualPlugin } from "../../surfaces/ScrubberPluginHost"
+import { WaveformScrubberPlugin } from "../../surfaces/WaveformScrubberPlugin"
 import {
     createKeyboardShortcutPlugin,
 } from "../KeyboardShortcutPlugin"
@@ -41,11 +43,18 @@ export interface PluginRegistryEntry {
     /** Short description. */
     description: string
     /**
-     * Factory that returns a fresh plugin instance.
+     * Plugin family. Lifecycle plugins receive audio/player lifecycle hooks.
+     * Scrubber visual plugins render only in ScrubberCanvas/ScrubberPluginHost.
+     */
+    kind?: "audio-lifecycle" | "scrubber-visual"
+    /**
+     * Factory that returns a fresh lifecycle plugin instance.
      * The registry calls this when the user installs the plugin.
      * The caller may merge default config before calling the factory.
      */
-    factory: () => AudioPlayerPlugin
+    factory?: () => AudioPlayerPlugin
+    /** Visual plugin mounted by consumers that expose a ScrubberCanvas slot. */
+    scrubberVisualPlugin?: ScrubberVisualPlugin
     /** Whether this plugin is enabled by default after install. */
     defaultActive: boolean
     /**
@@ -72,6 +81,8 @@ export interface PluginRegistrySnapshot {
     toggleActive: (id: string) => void
     /** Materialised active plugin instances — pass this as `plugins` to AudioPlayer. */
     activeInstances: readonly AudioPlayerPlugin[]
+    /** Active Scrubber Visual Plugins. These are not AudioPlayerPlugin lifecycle hooks. */
+    activeScrubberVisualPlugins: readonly ScrubberVisualPlugin[]
 }
 
 /* ------------------------------------------------------------------ */
@@ -92,6 +103,19 @@ const availablePlugins: PluginRegistryEntry[] = [
             }),
         defaultActive: true,
         category: "playback",
+        kind: "audio-lifecycle",
+    },
+    {
+        id: "waveform-scrubber",
+        label: "Waveform Scrubber",
+        description:
+            "Scrubber Visual Plugin: renders the waveform scrubber in " +
+            "ScrubberCanvas/ScrubberPluginHost and forwards seek events. " +
+            "Playback stays owned by the engine.",
+        scrubberVisualPlugin: WaveformScrubberPlugin,
+        defaultActive: false,
+        category: "scrubber visual",
+        kind: "scrubber-visual",
     },
     {
         id: "analytics",
@@ -116,6 +140,7 @@ const availablePlugins: PluginRegistryEntry[] = [
             }),
         defaultActive: false,
         category: "analytics",
+        kind: "audio-lifecycle",
     },
     {
         id: "lyrics",
@@ -136,6 +161,7 @@ const availablePlugins: PluginRegistryEntry[] = [
             }),
         defaultActive: false,
         category: "ui",
+        kind: "audio-lifecycle",
     },
     {
         id: "sleep-timer",
@@ -147,6 +173,7 @@ const availablePlugins: PluginRegistryEntry[] = [
             createSleepTimerPlugin({ name: "registry-sleep-timer" }),
         defaultActive: false,
         category: "ui",
+        kind: "audio-lifecycle",
     },
     {
         id: "automix",
@@ -159,6 +186,7 @@ const availablePlugins: PluginRegistryEntry[] = [
             createAutomixPlugin({ name: "registry-automix" }),
         defaultActive: false,
         category: "playback",
+        kind: "audio-lifecycle",
     },
     {
         id: "auto-theme",
@@ -170,6 +198,7 @@ const availablePlugins: PluginRegistryEntry[] = [
             createAutoThemePlugin({ name: "registry-auto-theme" }),
         defaultActive: false,
         category: "ui",
+        kind: "audio-lifecycle",
     },
 ]
 
@@ -272,10 +301,16 @@ export function PluginRegistryProvider({
     // React sees fresh references after an active→inactive→active toggle.
     const activeInstances = useMemo<readonly AudioPlayerPlugin[]>(() => {
         return installed
-            .filter((r) => r.active)
-            .map((r) => r.entry.factory())
+            .filter((r) => r.active && r.entry.factory)
+            .map((r) => r.entry.factory!())
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [installed, revRef.current])
+
+    const activeScrubberVisualPlugins = useMemo<readonly ScrubberVisualPlugin[]>(() => {
+        return installed
+            .filter((r) => r.active && r.entry.scrubberVisualPlugin)
+            .map((r) => r.entry.scrubberVisualPlugin!)
+    }, [installed])
 
     // Also track a derived RevRef for stable reference.
     const snapshot = useMemo<PluginRegistrySnapshot>(
@@ -288,6 +323,7 @@ export function PluginRegistryProvider({
             deactivate,
             toggleActive,
             activeInstances,
+            activeScrubberVisualPlugins,
         }),
         [
             installed,
@@ -297,6 +333,7 @@ export function PluginRegistryProvider({
             deactivate,
             toggleActive,
             activeInstances,
+            activeScrubberVisualPlugins,
         ]
     )
 
