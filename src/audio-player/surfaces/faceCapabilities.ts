@@ -143,9 +143,8 @@ const FACE_DEFINITIONS: Record<
     fullCard: { family: "primary" }, // flagship; pure family defaults
     portable: {
         family: "primary",
-        // Standalone player draws its own transport/menu; no surface-button
-        // contextual menu today.
-        supportsContextualActions: false,
+        // Inherits primary family defaults including
+        // supportsContextualActions: true for the radial command menu.
         scrubberDensity: "expanded",
     },
     seaCard: {
