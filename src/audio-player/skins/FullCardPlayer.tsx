@@ -19,6 +19,7 @@ import { ScrubberCanvasHost } from "../surfaces/ScrubberCanvasHost"
 import { PlayerSurfaceButtons } from "../surfaces/PlayerSurfaceButtons"
 import { QueueSurface } from "../surfaces/QueueSurface"
 import { getScrubberDensity } from "../surfaces/faceCapabilities"
+import type { WorkspaceRoute } from "../components/workspace/workspaceRoutes"
 import {
     Back10Icon,
     DotsIcon,
@@ -69,6 +70,7 @@ export function FullCardPlayer({
     const surface = usePlayerSurface("fullCard")
     const [queueDrawerOpen, setQueueDrawerOpen] = useState(false)
     const [controllerOpen, setControllerOpen] = useState(false)
+    const [controllerRoute, setControllerRoute] = useState<WorkspaceRoute>("options")
     const {
         currentTrack,
         currentIndex,
@@ -122,6 +124,26 @@ export function FullCardPlayer({
         share()
     }, [nativeShare, share])
 
+    // Open the shared SAP Controller with a focused workspace route from the
+    // arc menu. The same instance serves both the "..." button and arc workspace
+    // selections; closing it resets the route back to "options".
+    const handleOpenFocusedController = useCallback((route: WorkspaceRoute) => {
+        setControllerRoute(route)
+        setControllerOpen(true)
+    }, [])
+
+    const handleCloseController = useCallback(() => {
+        setControllerOpen(false)
+        setControllerRoute("options")
+    }, [])
+
+    // When the "..." button opens the controller, ensure we're on the default
+    // options route so the user always sees the standard options first.
+    const handleOpenOptions = useCallback(() => {
+        setControllerRoute("options")
+        setControllerOpen(true)
+    }, [])
+
     return (
         <div
             className={`ap-fc${className ? ` ${className}` : ""}`}
@@ -141,11 +163,13 @@ export function FullCardPlayer({
                 onRemove={s.removeFromQueue}
             />
 
-            {/* SAP Controller: shuffle/repeat/automix, queue, info, share. */}
+            {/* Shared SAP Controller: owns the single instance for both "..." and
+                arc workspace routes. Route determines whether a focused workspace
+                panel renders above the default options. */}
             <SAPController
                 open={controllerOpen}
-                onClose={() => setControllerOpen(false)}
-                route="options"
+                onClose={handleCloseController}
+                route={controllerRoute}
                 playback={{
                     shuffle,
                     onToggleShuffle: s.toggleShuffle,
@@ -181,7 +205,7 @@ export function FullCardPlayer({
                 <button
                     type="button"
                     className="ap-icon-btn ap-tap ap-menu__btn"
-                    onClick={() => setControllerOpen(true)}
+                    onClick={handleOpenOptions}
                     aria-label="Player options"
                     aria-haspopup="dialog"
                     aria-expanded={controllerOpen}
@@ -383,7 +407,11 @@ export function FullCardPlayer({
                     />
                 )}
 
-                <PlayerSurfaceButtons surface={surface} onOpenQueue={handleOpenQueue} />
+                <PlayerSurfaceButtons
+                    surface={surface}
+                    onOpenQueue={handleOpenQueue}
+                    onOpenFocusedController={handleOpenFocusedController}
+                />
             </div>
         </div>
     )
