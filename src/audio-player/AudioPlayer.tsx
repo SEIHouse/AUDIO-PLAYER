@@ -143,10 +143,10 @@ class AudioPlayerErrorBoundary extends Component<
  * and mobile volume follows the Phase 1 `defaultShowVolume()` default.
  *
  * Phase 4 wires its scrubber through the shared `ScrubberCanvasHost` +
- * `WaveformAdapter`, the same path the session faces use. The standalone
- * `showWaveform` prop drives the adapter's `waveform` override (instead of the
- * face capability), so the previous opt-in waveform behavior is preserved while
- * the player now shares the unified scrubber + plugin mount point.
+ * `WaveformAdapter`, the same path the session faces use. The standalone player
+ * defaults to the basic progress bar; the waveform turns on when the Waveform
+ * plugin is active (gated by its Show Waveform toggle) or when the explicit
+ * `showWaveform` prop is set — see `effectiveWaveform` below.
  */
 export function AudioPlayer(props: AudioPlayerProps) {
     return (
@@ -174,7 +174,7 @@ function AudioPlayerInner(props: AudioPlayerProps) {
         darkenAmount = 0,
         showTracklist = false,
         showVolume = defaultShowVolume(),
-        showWaveform = false,
+        showWaveform,
         waveformHeight = 48,
         titleFont,
         artistFont,
@@ -208,6 +208,29 @@ function AudioPlayerInner(props: AudioPlayerProps) {
     const [queueOpen, setQueueOpen] = useState(false)
     const rootRef = useRef<HTMLDivElement>(null)
     const previousTracksSignatureRef = useRef(tracksSignature)
+
+    // Waveform scrubber: the registry Waveform plugin marks itself via
+    // `providesWaveform`. When present, the player shows the wavesurfer waveform,
+    // gated by a "Show Waveform" toggle (default ON each time it activates).
+    const hasWaveformPlugin = useMemo(
+        () => externalPlugins.some((plugin) => plugin.providesWaveform),
+        [externalPlugins]
+    )
+    const [waveformEnabled, setWaveformEnabled] = useState(true)
+    // Reset the toggle ON each time the plugin (re)activates. Adjusting state
+    // during render (vs. an effect) is the idiomatic pattern and avoids an extra
+    // commit/render pass.
+    const [prevHasWaveformPlugin, setPrevHasWaveformPlugin] =
+        useState(hasWaveformPlugin)
+    if (hasWaveformPlugin !== prevHasWaveformPlugin) {
+        setPrevHasWaveformPlugin(hasWaveformPlugin)
+        if (hasWaveformPlugin) setWaveformEnabled(true)
+    }
+
+    // Scrubber mode: an explicit `showWaveform` prop wins; otherwise the plugin
+    // (with its toggle) decides; with neither, the basic progress bar.
+    const effectiveWaveform =
+        showWaveform ?? (hasWaveformPlugin ? waveformEnabled : false)
 
     // Sync localQueue only when the logical track list changes. Parent renders
     // often recreate the array instance; resetting on identity alone would wipe
@@ -795,6 +818,14 @@ function AudioPlayerInner(props: AudioPlayerProps) {
                 }}
                 share={{ onShare: handleShareClick, copied: shareCopied }}
                 pluginNames={externalPlugins.map((plugin) => plugin.name)}
+                waveform={
+                    hasWaveformPlugin
+                        ? {
+                              enabled: waveformEnabled,
+                              onToggle: () => setWaveformEnabled((v) => !v),
+                          }
+                        : undefined
+                }
                 accentColor={accentColor}
                 playIconColor={playIconColor}
                 textColor={textColor}
@@ -920,8 +951,9 @@ function AudioPlayerInner(props: AudioPlayerProps) {
                 <div className="ap-progress-group" role="group" aria-label="Playback progress">
                     {/* ScrubberCanvasHost + WaveformAdapter (Phase 4): the same
                         unified scrubber the session faces use. `waveform` is
-                        driven by the standalone `showWaveform` prop (not the face
-                        capability), preserving the previous opt-in behavior. */}
+                        resolved by `effectiveWaveform` — the Waveform plugin's
+                        toggle or an explicit `showWaveform` prop, defaulting to
+                        the basic progress bar. */}
                     <ScrubberCanvasHost
                         face="portable"
                         density={getScrubberDensity("portable")}
@@ -933,7 +965,7 @@ function AudioPlayerInner(props: AudioPlayerProps) {
                         <WaveformAdapter
                             face="portable"
                             density={getScrubberDensity("portable")}
-                            waveform={showWaveform}
+                            waveform={effectiveWaveform}
                             currentTime={currentTime}
                             duration={duration}
                             buffered={buffered}
