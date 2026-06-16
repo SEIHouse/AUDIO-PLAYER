@@ -1,10 +1,9 @@
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo } from "react"
 import { CanvasIcon } from "../skins/icons"
 import { SurfaceButton } from "./SurfaceButton"
 import { SEICanvasActionMenu } from "./SEICanvasActionMenu"
 import { buildMenuTree } from "../menu/menuData"
 import type { MenuNode } from "../menu/menuData"
-import { SAPController } from "../components/SAPController"
 import type { WorkspaceRoute } from "../components/workspace/workspaceRoutes"
 import type { UsePlayerSurfaceResult } from "./usePlayerSurface"
 
@@ -35,6 +34,12 @@ export interface PlayerSurfaceButtonsProps {
     canNext?: boolean
     onPrevious?: () => void
     onNext?: () => void
+    /**
+     * Callback when a workspace route is selected from the arc menu. The parent
+     * face should manage a single SAPController instance and update its route.
+     * This component no longer owns/renders a separate SAPController.
+     */
+    onOpenFocusedController?: (route: WorkspaceRoute) => void
     className?: string
 }
 
@@ -54,6 +59,7 @@ export function PlayerSurfaceButtons({
     canNext = false,
     onPrevious,
     onNext,
+    onOpenFocusedController,
     className,
 }: PlayerSurfaceButtonsProps) {
     // Built only when the contextual menu is actually rendered, and memoized so
@@ -91,15 +97,15 @@ export function PlayerSurfaceButtons({
         [onNext, onPrevious]
     )
 
-    // The radial menu opens focused workspace routes in the shared SAP Controller
-    // shell. "options" is the closed/default state; a real route opens the sheet.
-    const [controllerRoute, setControllerRoute] = useState<WorkspaceRoute>("options")
-    const [workspaceOpen, setWorkspaceOpen] = useState(false)
-    const handleOpenWorkspace = useCallback((route: WorkspaceRoute) => {
-        setControllerRoute(route)
-        setWorkspaceOpen(true)
-    }, [])
-    const handleCloseWorkspace = useCallback(() => setWorkspaceOpen(false), [])
+    // The radial menu opens focused workspace routes via the parent's callback.
+    // This component no longer owns/renders a separate SAPController — the parent
+    // face manages a single shared instance for both the "..." button and arc menu.
+    const handleOpenWorkspace = useCallback(
+        (route: WorkspaceRoute) => {
+            onOpenFocusedController?.(route)
+        },
+        [onOpenFocusedController]
+    )
 
     if (!showCanvasButton && !showQueueButton) return null
     return (
@@ -126,16 +132,6 @@ export function PlayerSurfaceButtons({
                     onOpenQueue={onOpenQueue ?? surface.toggleQueue}
                     onOpenWorkspace={handleOpenWorkspace}
                     onSelect={handleSelect}
-                />
-            )}
-            {/* Workspace shell hosting the route the radial menu chose. The
-                "options" route is never opened here — that stays the face's own
-                three-dot SAPController. */}
-            {showQueueButton && (
-                <SAPController
-                    open={workspaceOpen}
-                    route={controllerRoute}
-                    onClose={handleCloseWorkspace}
                 />
             )}
         </div>

@@ -250,23 +250,25 @@ export function SAPController({
                 onKeyDown={handleTrapKeyDown}
             >
                 <div className="sap-ctl__grab" aria-hidden="true" />
+                {/* Focused workspace route: render workspace panel above options */}
                 {!isOptions && (
-                    <WorkspaceShell
-                        route={route}
-                        onClose={onClose}
-                        lyrics={info?.lyrics}
-                    />
+                    <>
+                        <WorkspaceShell
+                            route={route}
+                            onClose={onClose}
+                            lyrics={info?.lyrics}
+                        />
+                        <div className="sap-ctl__divider" role="separator" aria-hidden="true" />
+                    </>
                 )}
-                {isOptions && (
-                <>
                 <header className="sap-ctl__header">
-                    <h2 className="sap-ctl__title">Options</h2>
+                    <h2 className="sap-ctl__title">{isOptions ? "Options" : "Options"}</h2>
                     <button
                         ref={closeRef}
                         type="button"
                         className="sap-ctl__close ap-tap"
                         onClick={onClose}
-                        aria-label="Close player options"
+                        aria-label={isOptions ? "Close player options" : "Close workspace"}
                     >
                         <CloseIcon />
                     </button>
@@ -417,8 +419,6 @@ export function SAPController({
                             ))}
                         </ul>
                     </Section>
-                )}
-                </>
                 )}
             </div>
         </div>,
