@@ -66,6 +66,7 @@ Formalize existing modular patterns into standardized plugin interface. Extract 
 **IMPLEMENTATION PLAN FOR BUILDERS:**
 
 1. **Define Plugin Interface** (`src/audio-player/core/plugins/PluginInterface.ts`)
+
    ```typescript
    // Standard methods all plugins must implement:
    init(playerInstance: PluginPlayerContext): void | (() => void)

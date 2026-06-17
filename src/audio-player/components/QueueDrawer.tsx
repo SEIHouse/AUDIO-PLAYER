@@ -327,7 +327,7 @@ export function QueueDrawer({
     const [announcement, setAnnouncement] = useState("")
     const prevQueueRef = useRef(queue)
 
-    const upcomingStart = currentIndex
+    const upcomingStart = Math.max(0, currentIndex)
     const visibleQueue = queue.slice(upcomingStart)
 
     const drag = useQueueDrag(queue.length, onReorder, 56, upcomingStart)

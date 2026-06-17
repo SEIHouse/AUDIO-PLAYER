@@ -63,8 +63,13 @@ export const AutomixPluginConfigSchema = z.object({
 
 export const AnalyticsPluginConfigSchema = z.object({
     name: z.string().optional().default("analytics"),
+<<<<<<< Updated upstream
     endpoint: z.union([z.string().url(), z.string().startsWith('/')]).optional(),
     send: z.function().optional(),
+=======
+    endpoint: z.string().optional(),
+    send: z.custom<Function>((val) => typeof val === 'function').optional(),
+>>>>>>> Stashed changes
     includeTimeUpdates: z.boolean().optional().default(false),
     timeUpdateIntervalSeconds: z.number().positive().optional().default(15),
 })
