@@ -19,11 +19,7 @@ export function hasCanvasSurface(definition: PluginSurfaceDefinition): boolean {
 
 /** True when the plugin renders no UI at all. */
 export function isHeadlessPlugin(definition: PluginSurfaceDefinition): boolean {
-    return (
-        definition.kind === "headless" &&
-        !hasSettingsSurface(definition) &&
-        !hasCanvasSurface(definition)
-    )
+    return definition.kind === "headless"
 }
 
 /** The declarative settings route, when the plugin has an enabled settings surface. */

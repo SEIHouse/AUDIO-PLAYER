@@ -39,8 +39,9 @@ export type PluginMenuBranch =
 /** Settings surface: the plugin exposes options in the SAPController experience. */
 export interface PluginSettingsSurface {
     enabled: boolean
-    /** Declarative workspace route string (e.g. "playback:automix"). */
-    route?: string
+    /** Declarative workspace route string (e.g. "playback:automix"). Required:
+     *  a settings surface is not navigable without a destination. */
+    route: string
     label?: string
     description?: string
 }
@@ -64,14 +65,38 @@ export interface PluginMenuSurface {
     order?: number
 }
 
-/** The full surface routing definition for a single plugin. */
-export interface PluginSurfaceDefinition {
+/** Fields shared by every surface definition, regardless of kind. */
+interface PluginSurfaceBase {
     pluginId: string
     label: string
     description?: string
     category: PluginSurfaceCategory
-    kind: PluginSurfaceKind
-    settings?: PluginSettingsSurface
-    canvas?: PluginCanvasSurface
     menu?: PluginMenuSurface
 }
+
+/**
+ * The full surface routing definition for a single plugin, modeled as a
+ * discriminated union on `kind` so impossible states (e.g. a "headless" plugin
+ * with a canvas surface, or a "canvas" plugin without one) are unrepresentable.
+ */
+export type PluginSurfaceDefinition =
+    | (PluginSurfaceBase & {
+          kind: "headless"
+          settings?: never
+          canvas?: never
+      })
+    | (PluginSurfaceBase & {
+          kind: "settings"
+          settings: PluginSettingsSurface
+          canvas?: never
+      })
+    | (PluginSurfaceBase & {
+          kind: "canvas"
+          settings?: never
+          canvas: PluginCanvasSurface
+      })
+    | (PluginSurfaceBase & {
+          kind: "dual"
+          settings: PluginSettingsSurface
+          canvas: PluginCanvasSurface
+      })

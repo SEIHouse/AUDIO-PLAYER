@@ -30,7 +30,7 @@ import type {
 } from "./pluginSurfaceTypes"
 import { sortPluginSurfaceDefinitions } from "./pluginSurfaceHelpers"
 
-export const DEFAULT_PLUGIN_SURFACES: PluginSurfaceDefinition[] = [
+export const DEFAULT_PLUGIN_SURFACES: readonly PluginSurfaceDefinition[] = [
     {
         pluginId: "keyboard-shortcuts",
         label: "Keyboard Shortcuts",
