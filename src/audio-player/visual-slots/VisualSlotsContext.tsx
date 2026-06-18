@@ -12,6 +12,11 @@ import type { VisualSlot } from "./types"
 // before any provider seeds its state or any renderer reads the active slot.
 for (const def of BUILTIN_VISUAL_COMPONENTS) registerVisualComponent(def)
 
+// A stable empty object, returned in place of `{}` literals so callers that key
+// off referential identity (memoization, dependency arrays) don't see a "change"
+// on every call when there's genuinely nothing to report.
+const EMPTY_OBJECT: Record<string, unknown> = {}
+
 /** The per-player visual-slot store exposed through context. */
 export interface VisualSlotsContextValue {
     /** The active component id for a slot (or null when none is active). */
@@ -74,7 +79,7 @@ export function VisualSlotsProvider({ children }: VisualSlotsProviderProps) {
 
     const getSettings = useCallback(
         (id: string): Record<string, unknown> =>
-            settingsById[id] ?? { ...(getDefaultsFor(id) ?? {}) },
+            settingsById[id] ?? getDefaultsFor(id) ?? EMPTY_OBJECT,
         [settingsById]
     )
 
@@ -100,10 +105,22 @@ export function VisualSlotsProvider({ children }: VisualSlotsProviderProps) {
     )
 }
 
+// Caches the spread-copy of each component's defaultSettings by id, so repeated
+// lookups (e.g. from getSettings on every render) return the same reference
+// instead of a fresh object each time.
+const defaultsCache = new Map<string, Record<string, unknown>>()
+
 /** Defaults lookup that tolerates components registered after seeding. */
 function getDefaultsFor(id: string): Record<string, unknown> | undefined {
+    const cached = defaultsCache.get(id)
+    if (cached) return cached
+
     for (const def of getAllVisualComponents()) {
-        if (def.id === id) return { ...(def.defaultSettings as Record<string, unknown>) }
+        if (def.id === id) {
+            const defaults = { ...(def.defaultSettings as Record<string, unknown>) }
+            defaultsCache.set(id, defaults)
+            return defaults
+        }
     }
     return undefined
 }
@@ -116,7 +133,7 @@ function getDefaultsFor(id: string): Record<string, unknown> | undefined {
 const FALLBACK: VisualSlotsContextValue = {
     getActive: (slot) => getDefaultComponentForSlot(slot)?.id ?? null,
     setActive: () => {},
-    getSettings: (id) => getDefaultsFor(id) ?? {},
+    getSettings: (id) => getDefaultsFor(id) ?? EMPTY_OBJECT,
     updateSettings: () => {},
 }
 
