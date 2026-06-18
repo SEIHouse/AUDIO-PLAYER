@@ -257,7 +257,7 @@ function AudioPlayerInner(props: AudioPlayerProps) {
     const [localAutomix, setLocalAutomix] = useState(automix)
     
     // Theme persistence - stores a basic theme preference if users integrate it later
-    const [themePref, setThemePref] = useLocalStorage("ap-theme", "auto")
+    useLocalStorage("ap-theme", "auto")
 
     // Editable local queue (copy of tracks prop, updated by reorder/remove).
     const [localQueue, setLocalQueue] = useState<Track[]>(tracks)
