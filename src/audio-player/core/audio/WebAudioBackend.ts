@@ -192,15 +192,17 @@ export class WebAudioBackend implements AudioBackend {
         this.panner.orientationY.value = this.orientation[1]
         this.panner.orientationZ.value = this.orientation[2]
 
-        this.stereoPanner = this.ctx.createStereoPanner()
-        this.stereoPanner.pan.value = this.stereoPan
-
         this.gain = this.ctx.createGain()
         this.gain.gain.value = this.muted ? 0 : this.volume
 
-        // Connect the chain: panner → stereoPanner → gain → destination
-        this.panner.connect(this.stereoPanner)
-        this.stereoPanner.connect(this.gain)
+        if (typeof this.ctx.createStereoPanner === "function") {
+            this.stereoPanner = this.ctx.createStereoPanner()
+            this.stereoPanner.pan.value = this.stereoPan
+            this.panner.connect(this.stereoPanner)
+            this.stereoPanner.connect(this.gain)
+        } else {
+            this.panner.connect(this.gain)
+        }
         this.gain.connect(this.ctx.destination)
 
         return this.ctx
