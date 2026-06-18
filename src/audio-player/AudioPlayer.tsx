@@ -382,11 +382,11 @@ function AudioPlayerBody(props: AudioPlayerBodyProps) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queueSignature])
 
-    // Keep the local autoplay toggle in sync with prop changes (e.g. properties
-    // panel edits).
-    useEffect(() => {
+    const [prevAutoPlay, setPrevAutoPlay] = useState(autoPlay)
+    if (autoPlay !== prevAutoPlay) {
+        setPrevAutoPlay(autoPlay)
         setLocalAutoPlay(autoPlay)
-    }, [autoPlay])
+    }
 
     const {
         currentTrack: sessionTrack,
