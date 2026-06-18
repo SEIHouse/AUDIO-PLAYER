@@ -107,6 +107,7 @@ export class WebAudioBackend implements AudioBackend {
     private startedAtCtxTime = 0
     private volume = 1
     private muted = false
+    private rate = 1
     private loopFlag = false
     private lastError: AudioBackendErrorCode | null = null
     private generation = 0
@@ -270,6 +271,7 @@ export class WebAudioBackend implements AudioBackend {
         const source = ctx.createBufferSource()
         source.buffer = buffer
         source.loop = this.loopFlag
+        source.playbackRate.value = this.rate
         source.connect(this.gain)
         const token = (this.sourceToken += 1)
         source.onended = () => {
