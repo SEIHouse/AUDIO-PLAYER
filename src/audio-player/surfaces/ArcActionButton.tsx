@@ -38,8 +38,13 @@ function toMenuNodes(actions: ArcAction[]): MenuNode[] {
         state: a.state,
         // No `actionId`: leaf selections fall through to the menu's `onSelect`,
         // which we dispatch by id — keeping this fully decoupled from the
-        // reserved queue/canvas actions.
-        children: a.children ? toMenuNodes(a.children) : undefined,
+        // reserved queue/canvas actions. An empty `children` array stays
+        // `undefined` so the node renders as a leaf (matching `indexLeaves`),
+        // not a submenu that opens nothing.
+        children:
+            a.children && a.children.length > 0
+                ? toMenuNodes(a.children)
+                : undefined,
     }))
 }
 

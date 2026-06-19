@@ -68,9 +68,11 @@ export function getVaultCategoryMeta(
     category: string | undefined
 ): VaultCategoryMeta | null {
     if (!category) return null
-    return (
-        CUSTOM_CATEGORIES.get(category) ??
-        VAULT_CATEGORY_META[category as VaultCategory] ??
-        null
-    )
+    // `hasOwnProperty` guards against inherited prototype keys: now that the
+    // field accepts any string, a value like "toString"/"constructor" would
+    // otherwise resolve to a Function.prototype member instead of null.
+    if (CUSTOM_CATEGORIES.has(category)) return CUSTOM_CATEGORIES.get(category)!
+    return Object.prototype.hasOwnProperty.call(VAULT_CATEGORY_META, category)
+        ? VAULT_CATEGORY_META[category as VaultCategory]
+        : null
 }

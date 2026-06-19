@@ -18,6 +18,15 @@ describe("vault category lookup", () => {
     it("returns null for an unknown string", () => {
         expect(getVaultCategoryMeta("not-a-category")).toBeNull()
     })
+
+    it("returns null for inherited prototype keys (no prototype lookup bug)", () => {
+        // Field is widened to any string; these must not resolve to
+        // Object/Function.prototype members.
+        expect(getVaultCategoryMeta("toString")).toBeNull()
+        expect(getVaultCategoryMeta("constructor")).toBeNull()
+        expect(getVaultCategoryMeta("hasOwnProperty")).toBeNull()
+        expect(getVaultCategoryMeta("__proto__")).toBeNull()
+    })
 })
 
 describe("custom category registry", () => {
