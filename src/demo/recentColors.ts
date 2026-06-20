@@ -4,6 +4,17 @@
 const STORAGE_KEY = "seihouse-audio-player:recent-colors:v1"
 const MAX_RECENT = 8
 
+type Listener = (colors: string[]) => void
+const listeners = new Set<Listener>()
+
+/** Subscribe to recent-color updates from any field; returns an unsubscribe function. */
+export function subscribeRecentColors(listener: Listener): () => void {
+    listeners.add(listener)
+    return () => {
+        listeners.delete(listener)
+    }
+}
+
 export function getRecentColors(): string[] {
     try {
         if (typeof localStorage === "undefined") return []
@@ -30,5 +41,6 @@ export function pushRecentColor(hex: string): string[] {
     } catch {
         /* quota exceeded or storage disabled — recent list just won't persist */
     }
+    listeners.forEach((l) => l(next))
     return next
 }

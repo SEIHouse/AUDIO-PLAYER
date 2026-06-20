@@ -150,7 +150,7 @@ export const PROPERTY_REGISTRY: readonly PropertyDescriptor[] = [
         label: "Button Fill",
         description: "Translucency of button fills — lower is more see-through, higher is more solid.",
         group: "appearance",
-        control: { kind: "range", min: -20, max: 40, step: 1, unit: "pt" },
+        control: { kind: "range", min: -20, max: 40, step: 1, unit: "%" },
         propPath: "theme.buttonOpacity",
         default: 0,
     },

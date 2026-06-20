@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { CSSProperties } from "react"
 import type {
     MediaSource,
@@ -6,7 +6,7 @@ import type {
     RepeatMode,
 } from "../../audio-player"
 import { MediaPicker } from "./MediaPicker"
-import { getRecentColors, pushRecentColor } from "../recentColors"
+import { getRecentColors, pushRecentColor, subscribeRecentColors } from "../recentColors"
 
 /* rgba/hex normalizer: <input type=color> only accepts 7-char hex, but the
    audio player uses hex AND rgba() strings. Fall back so the user still sees a
@@ -84,6 +84,7 @@ export function PropertyControl({
     // Hooks) — only the "color" case reads this state, but it has to be
     // declared at the top level regardless of which control kind renders.
     const [recentColors, setRecentColors] = useState<string[]>(getRecentColors)
+    useEffect(() => subscribeRecentColors(setRecentColors), [])
 
     switch (control.kind) {
         case "color": {

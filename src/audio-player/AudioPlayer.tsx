@@ -627,7 +627,7 @@ function AudioPlayerBody(props: AudioPlayerBodyProps) {
         "--ap-track": trackColor,
         "--ap-bg": backgroundColor,
         "--ap-glow": glowColor,
-        "--ap-glow-intensity": `${glowIntensity}%`,
+        "--ap-glow-intensity": glowIntensity / 100,
         "--ap-btn-opacity-delta": `${buttonOpacity}%`,
         "--ap-blur": `${blurSize}px`,
     } as CSSProperties
