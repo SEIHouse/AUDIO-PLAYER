@@ -40,6 +40,52 @@
     box-sizing: border-box;
 }
 
+/* ----------------------------- Premium material system -----------------------------
+   Shared "glass" surface so bright/saturated user colors stay premium AND keep
+   their personality. The chosen --ap-bg hue is the star: a saturation boost
+   keeps it vivid, a directional top sheen reads as light catching glass, and
+   only a whisper of neutral scrim adds depth at the base. Readability is solved
+   locally — text shadows and the buttons' own material separation — NOT by
+   darkening the whole surface, so bright yellow/green/cyan never go olive/muddy.
+   Any face opts in with `.ap-glass-surface`; compact faces (less area for the
+   blur to do contrast work) add the `--compact` modifier for a touch more
+   depth. Faces may override the --ap-mat-* tokens inline to retint. */
+.ap-glass-surface {
+    /* A faint, mostly-bottom scrim for depth — kept low so it darkens without
+       desaturating the hue. The saturate() boost more than compensates. */
+    --ap-mat-scrim: rgba(12, 14, 22, 0.12);
+    /* Directional glass highlight along the top edge (fades out by ~halfway,
+       so the majority of the surface shows the pure, vivid color). */
+    --ap-mat-sheen: rgba(255, 255, 255, 0.22);
+    --ap-mat-border: rgba(255, 255, 255, 0.18);
+    --ap-mat-saturate: 185%;
+    background-color: var(--ap-bg);
+    background-image:
+        linear-gradient(165deg, var(--ap-mat-sheen), transparent 48%),
+        linear-gradient(0deg, var(--ap-mat-scrim), transparent 70%);
+    border: 1px solid var(--ap-mat-border);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+        0 10px 30px -10px rgba(0, 0, 0, 0.35);
+    -webkit-backdrop-filter: blur(var(--ap-blur, 20px)) saturate(var(--ap-mat-saturate));
+    backdrop-filter: blur(var(--ap-blur, 20px)) saturate(var(--ap-mat-saturate));
+}
+.ap-glass-surface--compact {
+    --ap-mat-scrim: rgba(12, 14, 22, 0.16);
+    --ap-mat-saturate: 178%;
+}
+/* Browsers without backdrop-filter lose the blur + saturation boost, so lean
+   harder on the scrim to keep content readable over a bright surface color. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .ap-glass-surface {
+        --ap-mat-scrim: rgba(12, 14, 22, 0.42);
+    }
+    .ap-glass-surface--compact {
+        --ap-mat-scrim: rgba(12, 14, 22, 0.48);
+    }
+}
+
 .ap-sr-only {
     position: absolute;
     left: -10000px;
@@ -147,15 +193,35 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    border: 1px solid var(--ap-accent);
-    background-color: var(--ap-bg);
+    border: 1px solid color-mix(in srgb, var(--ap-accent) 50%, transparent);
+    background-color: color-mix(in srgb, var(--ap-accent) 18%, var(--ap-bg));
     color: var(--ap-accent);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    box-shadow:
+        inset 0 1px 0.5px rgba(255, 255, 255, 0.3),
+        inset 0 -1.5px 2px rgba(0, 0, 0, 0.12),
+        0 0 0 0.5px rgba(0, 0, 0, 0.05),
+        0 2px 7px rgba(0, 0, 0, 0.2);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    backdrop-filter: blur(10px) saturate(140%);
     padding: 0;
+    transition: transform 0.12s ease, box-shadow 0.18s ease, background-color 0.18s ease,
+        border-color 0.18s ease;
+}
+.ap-menu__btn:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--ap-accent) 28%, var(--ap-bg));
+    border-color: color-mix(in srgb, var(--ap-accent) 70%, transparent);
+    box-shadow:
+        inset 0 1px 0.5px rgba(255, 255, 255, 0.38),
+        inset 0 -1.5px 2px rgba(0, 0, 0, 0.12),
+        0 0 0 0.5px rgba(0, 0, 0, 0.05),
+        0 4px 11px rgba(0, 0, 0, 0.26);
+}
+.ap-menu__btn:active:not(:disabled) {
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 .ap-menu__btn[aria-expanded="true"] {
     background-color: var(--ap-accent);
@@ -334,17 +400,48 @@
     cursor: pointer;
     flex-shrink: 0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: transform 0.12s ease, box-shadow 0.18s ease,
+        background-color 0.18s ease, border-color 0.18s ease;
 }
 .ap-btn:disabled {
     cursor: not-allowed;
     opacity: 0.5;
 }
+/* Premium glass treatment: a raised, dimensional control instead of a flat
+   icon printed on the surface color. A tinted glass fill (not transparent)
+   plus an inner highlight + soft outer shadow read as a physical button on
+   any surface color, bright or dark. */
 .ap-btn--ghost {
     width: 40px;
     height: 40px;
-    border: 2px solid var(--ap-accent);
-    background-color: transparent;
+    border: 1.5px solid color-mix(in srgb, var(--ap-accent) 50%, transparent);
+    background-color: color-mix(in srgb, var(--ap-accent) 18%, transparent);
     color: var(--ap-accent);
+    /* Top highlight + bottom inner shadow = a bevel; the hairline outer ring
+       separates the control from a same-color surface; the soft drop lifts it. */
+    box-shadow:
+        inset 0 1px 0.5px rgba(255, 255, 255, 0.35),
+        inset 0 -2px 3px rgba(0, 0, 0, 0.14),
+        0 0 0 0.5px rgba(0, 0, 0, 0.05),
+        0 3px 8px -2px rgba(0, 0, 0, 0.22);
+    /* Saturate keeps the accent tint vivid through the frosted fill. */
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    backdrop-filter: blur(10px) saturate(140%);
+}
+.ap-btn--ghost:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--ap-accent) 28%, transparent);
+    border-color: color-mix(in srgb, var(--ap-accent) 72%, transparent);
+    box-shadow:
+        inset 0 1px 0.5px rgba(255, 255, 255, 0.42),
+        inset 0 -2px 3px rgba(0, 0, 0, 0.14),
+        0 0 0 0.5px rgba(0, 0, 0, 0.05),
+        0 5px 13px -3px rgba(0, 0, 0, 0.3);
+}
+.ap-btn--ghost:active:not(:disabled) {
+    background-color: color-mix(in srgb, var(--ap-accent) 22%, transparent);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.28),
+        0 1px 2px rgba(0, 0, 0, 0.12);
 }
 .ap-btn--sm {
     /* Anchor for the coarse-pointer hit-area pseudo-element. Kept off
@@ -357,9 +454,41 @@
 .ap-btn--play {
     width: 60px;
     height: 60px;
-    border: none;
-    background-color: var(--ap-accent);
-    color: var(--ap-play-icon);
+    /* See-through glass body like the other transport controls — the accent
+       reads through a frosted tint rather than a solid fill, and an accent
+       glow (below) does the work of marking it as the primary control. */
+    border: 1px solid color-mix(in srgb, var(--ap-accent) 60%, transparent);
+    background-color: color-mix(in srgb, var(--ap-accent) 24%, transparent);
+    background-image: linear-gradient(165deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.04) 52%, transparent 74%);
+    /* Accent icon (not --ap-play-icon): a dark icon can't be read on a
+       translucent body, and this matches the accent icons of the other
+       transport buttons. */
+    color: var(--ap-accent);
+    -webkit-backdrop-filter: blur(10px) saturate(170%);
+    backdrop-filter: blur(10px) saturate(170%);
+    box-shadow:
+        inset 0 1px 0.5px rgba(255, 255, 255, 0.4),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.12),
+        0 0 0 1px color-mix(in srgb, var(--ap-accent) 28%, transparent),
+        0 0 20px -2px color-mix(in srgb, var(--ap-accent) 60%, transparent),
+        0 6px 16px -6px rgba(0, 0, 0, 0.4);
+}
+.ap-btn--play:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--ap-accent) 32%, transparent);
+    border-color: color-mix(in srgb, var(--ap-accent) 78%, transparent);
+    box-shadow:
+        inset 0 1px 0.5px rgba(255, 255, 255, 0.48),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.12),
+        0 0 0 1px color-mix(in srgb, var(--ap-accent) 36%, transparent),
+        0 0 30px 0 color-mix(in srgb, var(--ap-accent) 72%, transparent),
+        0 9px 22px -6px rgba(0, 0, 0, 0.45);
+}
+.ap-btn--play:active:not(:disabled) {
+    background-color: color-mix(in srgb, var(--ap-accent) 28%, transparent);
+    box-shadow:
+        inset 0 2px 5px rgba(0, 0, 0, 0.22),
+        0 0 16px -2px color-mix(in srgb, var(--ap-accent) 55%, transparent),
+        0 2px 6px -2px rgba(0, 0, 0, 0.3);
 }
 .ap-btn--play-active {
     animation: ap-pulse 3s ease-in-out infinite;
@@ -379,11 +508,32 @@
     justify-content: center;
     width: 32px;
     height: 32px;
-    border: none;
-    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--ap-text, #fff) 18%, transparent);
+    background-color: color-mix(in srgb, var(--ap-text, #fff) 10%, transparent);
     color: var(--ap-accent);
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: 9px;
+    /* Frosted glass chip: top highlight + bottom inner shade for a soft bevel,
+       a light drop so it sits above the surface rather than printed on it. */
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.1),
+        0 1px 4px rgba(0, 0, 0, 0.16);
+    -webkit-backdrop-filter: blur(8px) saturate(130%);
+    backdrop-filter: blur(8px) saturate(130%);
+    transition: transform 0.12s ease, box-shadow 0.18s ease, background-color 0.18s ease,
+        border-color 0.18s ease;
+}
+.ap-icon-btn:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--ap-text, #fff) 18%, transparent);
+    border-color: color-mix(in srgb, var(--ap-text, #fff) 26%, transparent);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.24),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.1),
+        0 2px 7px rgba(0, 0, 0, 0.2);
+}
+.ap-icon-btn:active:not(:disabled) {
+    box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.22);
 }
 .ap-icon-btn:disabled {
     opacity: 0.5;
@@ -797,7 +947,11 @@
     .ap-spin,
     .ap-anim-in,
     .ap-eq i,
-    .ap-tap {
+    .ap-tap,
+    .ap-btn,
+    .ap-icon-btn,
+    .ap-menu__btn,
+    .ap-surface-btn {
         animation: none !important;
         transition: none !important;
     }
