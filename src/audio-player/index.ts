@@ -234,6 +234,16 @@ export { VaultRowPlayer } from "./skins/VaultRowPlayer"
 export { StickyBottomPlayer } from "./skins/StickyBottomPlayer"
 export { MiniSidebarPlayer } from "./skins/MiniSidebarPlayer"
 export { SeaCardPlayer } from "./skins/SeaCardPlayer"
+export { NarrativeFace } from "./skins/NarrativeFace"
+// Narrative family: the headless layer orchestrator behind NarrativeFace,
+// exposed so reader apps can drive narration/ambience/FX without the UI.
+export { useNarrativeAudio } from "./narrative/useNarrativeAudio"
+export type {
+    UseNarrativeAudioOptions,
+    NarrativeAudioController,
+    NarrationState,
+    SoundscapeIndicatorState,
+} from "./narrative/useNarrativeAudio"
 export {
     VAULT_CATEGORY_META,
     getVaultCategoryMeta,
@@ -463,3 +473,4 @@ export type { VaultRowPlayerProps } from "./skins/VaultRowPlayer"
 export type { StickyBottomPlayerProps } from "./skins/StickyBottomPlayer"
 export type { MiniSidebarPlayerProps } from "./skins/MiniSidebarPlayer"
 export type { SeaCardPlayerProps } from "./skins/SeaCardPlayer"
+export type { NarrativeFaceProps } from "./skins/NarrativeFace"
