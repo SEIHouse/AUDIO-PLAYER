@@ -18219,7 +18219,6 @@ var SceneMixEngine = class {
 		} catch {
 			volumeWritesUnsupported = true;
 		}
-		el.src = src;
 		const abort = new AbortController();
 		const deck = {
 			el,
@@ -18244,8 +18243,9 @@ var SceneMixEngine = class {
 			this.releaseDeck(deck);
 		}, { signal: abort.signal });
 		ensureTrackAnalysis(track).then(() => {
-			if (!abort.signal.aborted) applyTrimStart();
+			if (!abort.signal.aborted && !deck.retiring) applyTrimStart();
 		});
+		el.src = src;
 		for (const other of this.decks) this.retire(other, fadeMs);
 		this.decks.push(deck);
 		this.active = deck;
@@ -18257,12 +18257,15 @@ var SceneMixEngine = class {
 			this.releaseDeck(deck);
 			return;
 		}
-		playPromise.catch(() => {
-			if (this.decks.includes(deck)) {
-				this.releaseDeck(deck);
-				const survivor = this.decks.find((d) => !d.retiring) ?? null;
-				if (survivor) this.unretire(survivor, fadeMs);
-				if (this.active === deck) this.active = survivor;
+		playPromise?.catch(() => {
+			if (!this.decks.includes(deck)) return;
+			const wasNewest = this.decks[this.decks.length - 1] === deck;
+			this.releaseDeck(deck);
+			if (!wasNewest) return;
+			const survivor = this.decks[this.decks.length - 1];
+			if (survivor) {
+				this.unretire(survivor, fadeMs);
+				this.active = survivor;
 			}
 		});
 		this.applyGains();

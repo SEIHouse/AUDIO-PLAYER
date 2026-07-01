@@ -145,7 +145,6 @@ export class SceneMixEngine {
         } catch {
             volumeWritesUnsupported = true
         }
-        el.src = src
 
         const abort = new AbortController()
         const deck: Deck = {
@@ -185,8 +184,11 @@ export class SceneMixEngine {
             { signal: abort.signal }
         )
         void ensureTrackAnalysis(track).then(() => {
-            if (!abort.signal.aborted) applyTrimStart()
+            if (!abort.signal.aborted && !deck.retiring) applyTrimStart()
         })
+        // Src is assigned after the listeners so a cache-instant
+        // `loadedmetadata` can't slip past the trim-start hook.
+        el.src = src
 
         // Retire everything currently audible toward silence.
         for (const other of this.decks) this.retire(other, fadeMs)
@@ -194,7 +196,7 @@ export class SceneMixEngine {
         this.decks.push(deck)
         this.active = deck
 
-        let playPromise: Promise<void>
+        let playPromise: Promise<void> | undefined
         try {
             el.load()
             playPromise = el.play()
@@ -202,14 +204,21 @@ export class SceneMixEngine {
             this.releaseDeck(deck)
             return
         }
-        playPromise.catch(() => {
+        playPromise?.catch(() => {
             // Autoplay policy rejected the new deck: give up on this switch
-            // and let whatever was playing keep playing.
-            if (this.decks.includes(deck)) {
-                this.releaseDeck(deck)
-                const survivor = this.decks.find((d) => !d.retiring) ?? null
-                if (survivor) this.unretire(survivor, fadeMs)
-                if (this.active === deck) this.active = survivor
+            // and let whatever was playing keep playing. Every other deck was
+            // just marked retiring, so the newest of them — the score that was
+            // audible before this call — is the one to bring back. If a later
+            // crossfadeTo already superseded this deck, it owns the mix; only
+            // recover a survivor when the rejected deck was still the newest.
+            if (!this.decks.includes(deck)) return
+            const wasNewest = this.decks[this.decks.length - 1] === deck
+            this.releaseDeck(deck)
+            if (!wasNewest) return
+            const survivor = this.decks[this.decks.length - 1]
+            if (survivor) {
+                this.unretire(survivor, fadeMs)
+                this.active = survivor
             }
         })
 
