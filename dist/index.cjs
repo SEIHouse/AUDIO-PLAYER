@@ -1,10 +1,11 @@
 (function(global, factory) {
-	typeof exports === "object" && typeof module !== "undefined" ? factory(exports, require("react"), require("react-dom")) : typeof define === "function" && define.amd ? define([
+	typeof exports === "object" && typeof module !== "undefined" ? factory(exports, require("react"), require("react/jsx-runtime"), require("react-dom")) : typeof define === "function" && define.amd ? define([
 		"exports",
 		"react",
+		"react/jsx-runtime",
 		"react-dom"
-	], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory(global.SEIHouseAudioPlayer = {}, global.React, global.ReactDOM));
-})(this, function(exports, react, react_dom) {
+	], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory(global.SEIHouseAudioPlayer = {}, global.React, global.react_jsx_runtime, global.ReactDOM));
+})(this, function(exports, react, react_jsx_runtime, react_dom) {
 	var __vite_style__ = document.createElement("style");
 	__vite_style__.textContent = "/* SEI Canvas Action Menu — the bottom-anchored half-circle command wheel.\n   Rendered through a portal on document.body; the player's --ap-* tokens are\n   copied onto the .sac root inline by the component. Sits at the same overlay\n   layer as the SAP Controller (z 120). */\n\n.sac {\n    position: fixed;\n    inset: 0;\n    z-index: 120;\n    font-family: system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n}\n\n/* Dim + light blur, fades in. Mirrors the SAP Controller backdrop. */\n.sac__backdrop {\n    position: absolute;\n    inset: 0;\n    background: rgba(0, 0, 0, 0.55);\n    backdrop-filter: blur(6px);\n    -webkit-backdrop-filter: blur(6px);\n    opacity: 0;\n    transition: opacity 0.2s ease;\n}\n.sac__backdrop[data-entered=\"true\"] {\n    opacity: 1;\n}\n\n/* Anchors the arc to the bottom-center within the safe area. */\n.sac__stage {\n    position: absolute;\n    inset: 0;\n    display: flex;\n    align-items: flex-end;\n    justify-content: center;\n    padding-bottom: max(3rem, calc(env(safe-area-inset-bottom) + 2rem));\n    pointer-events: none;\n}\n\n/* Zero-size pivot: all nodes + the center button are positioned relative to this\n   point (the bottom-center of the half-circle). */\n.sac__arc {\n    position: relative;\n    width: 0;\n    height: 0;\n    pointer-events: none;\n    /* Default fallback; the component overrides this per viewport via inline\n       style so the breadcrumb and depth indicator track the live radius. */\n    --arc-radius: 128px;\n}\n\n/* Submenu depth indicator — a faint radial glow centered on the pivot that\n   fades in with the arc, hinting at the wheel's focus area. */\n.sac__arc::before {\n    content: \"\";\n    position: absolute;\n    left: 50%;\n    top: 50%;\n    width: calc(2 * var(--arc-radius, 128px));\n    height: calc(2 * var(--arc-radius, 128px));\n    transform: translate(-50%, -50%);\n    background: radial-gradient(\n        circle at center,\n        color-mix(in srgb, var(--ap-text, #fff) 4%, transparent) 0%,\n        transparent 70%\n    );\n    border-radius: 50%;\n    pointer-events: none;\n    opacity: 0;\n    transition: opacity 0.2s ease;\n}\n.sac__arc[data-open=\"true\"]::before {\n    opacity: 1;\n}\n\n/* Center button: Close at root depth, Back inside a submenu. */\n.sac__center {\n    position: absolute;\n    left: 0;\n    top: 0;\n    width: 64px;\n    height: 64px;\n    transform: translate(-50%, -50%) scale(0.6);\n    opacity: 0;\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    border-radius: 50%;\n    border: 1px solid color-mix(in srgb, var(--ap-text, #fff) 22%, transparent);\n    background-color: color-mix(in srgb, var(--ap-text, #fff) 12%, transparent);\n    backdrop-filter: blur(12px);\n    -webkit-backdrop-filter: blur(12px);\n    color: var(--ap-text, #fff);\n    cursor: pointer;\n    pointer-events: auto;\n    touch-action: manipulation;\n    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),\n        opacity 0.2s ease-out, background-color 0.2s ease;\n}\n.sac__arc[data-open=\"true\"] .sac__center {\n    transform: translate(-50%, -50%) scale(1);\n    opacity: 1;\n}\n.sac__center:hover {\n    background-color: color-mix(in srgb, var(--ap-text, #fff) 18%, transparent);\n}\n\n/* Breadcrumb pill, floats above the top of the arc. */\n.sac__crumb {\n    position: absolute;\n    left: 0;\n    top: 0;\n    transform: translate(-50%, calc(-50% - var(--arc-radius, 128px) - 56px));\n    white-space: nowrap;\n    padding: 5px 12px;\n    border-radius: 999px;\n    font-size: 12px;\n    font-weight: 600;\n    letter-spacing: 0.01em;\n    color: var(--ap-text, #fff);\n    background-color: color-mix(in srgb, var(--ap-text, #fff) 10%, transparent);\n    border: 1px solid color-mix(in srgb, var(--ap-text, #fff) 16%, transparent);\n    backdrop-filter: blur(8px);\n    -webkit-backdrop-filter: blur(8px);\n    pointer-events: none;\n}\n\n/* A node: an icon disc with a label beneath it. Animates from the pivot out to\n   its polar offset (--sac-x / --sac-y), staggered via inline transition-delay. */\n.sac__node {\n    position: absolute;\n    left: 0;\n    top: 0;\n    width: 72px;\n    min-width: 48px; /* WCAG 2.1 AA touch-target minimum */\n    min-height: 48px;\n    display: inline-flex;\n    flex-direction: column;\n    align-items: center;\n    gap: 6px;\n    padding: 8px; /* enlarges the effective tap area around the disc */\n    border: none;\n    background: transparent;\n    color: var(--ap-text, #fff);\n    cursor: pointer;\n    pointer-events: auto;\n    /* Snappy taps: no 300ms delay, no double-tap zoom, no text selection. */\n    touch-action: manipulation;\n    -webkit-user-select: none;\n    user-select: none;\n    transform: translate(-50%, -50%) scale(0.4);\n    opacity: 0;\n    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),\n        opacity 0.2s ease-out;\n}\n.sac__arc[data-open=\"true\"] .sac__node {\n    transform: translate(-50%, -50%) translate(var(--sac-x), var(--sac-y)) scale(1);\n    opacity: 1;\n}\n\n/* Desktop hover: lift and lightly fill the disc. */\n.sac__node:hover .sac__node-icon {\n    background-color: color-mix(in srgb, var(--ap-text, #fff) 15%, transparent);\n    transform: scale(1.05);\n}\n\n/* Keyboard focus ring on the node + a halo on the disc. */\n.sac__node:focus-visible {\n    outline: 2px solid var(--ap-accent, #fff);\n    outline-offset: 4px;\n}\n.sac__node:focus-visible .sac__node-icon {\n    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ap-accent, #fff) 30%, transparent);\n}\n\n/* Press feedback. */\n.sac__node:active .sac__node-icon {\n    transform: scale(0.95);\n}\n\n.sac__node-icon {\n    position: relative;\n    width: 56px; /* trimmed from 60px to breathe inside the 72px node */\n    height: 56px;\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    border-radius: 50%;\n    border: 1px solid color-mix(in srgb, var(--ap-text, #fff) 16%, transparent);\n    background-color: color-mix(in srgb, var(--ap-text, #fff) 8%, transparent);\n    backdrop-filter: blur(12px);\n    -webkit-backdrop-filter: blur(12px);\n    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ap-text, #fff) 14%, transparent);\n    transition: background-color 0.2s ease, border-color 0.2s ease,\n        box-shadow 0.2s ease, color 0.2s ease, transform 0.2s ease;\n}\n.sac__node-label {\n    font-size: 11px;\n    font-weight: 500;\n    line-height: 1.2;\n    text-align: center;\n    max-width: 80px;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);\n}\n\n/* \"soon\" badge for coming-soon nodes. */\n.sac__badge {\n    position: absolute;\n    top: -4px;\n    right: 2px;\n    padding: 1px 6px;\n    border-radius: 999px;\n    font-size: 9px;\n    font-weight: 700;\n    text-transform: uppercase;\n    letter-spacing: 0.04em;\n    color: var(--ap-bg, #14141c);\n    background-color: color-mix(in srgb, var(--ap-text, #fff) 70%, transparent);\n}\n\n/* ------------------------------- States ------------------------------- */\n.sac__node--active .sac__node-icon {\n    background-color: color-mix(in srgb, var(--ap-accent, #fff) 22%, transparent);\n    border-color: var(--ap-accent, #fff);\n    color: var(--ap-accent, #fff);\n    box-shadow: 0 0 0 1px var(--ap-accent, #fff),\n        0 0 18px color-mix(in srgb, var(--ap-accent, #fff) 45%, transparent);\n}\n.sac__node--inactive .sac__node-icon {\n    opacity: 0.7;\n    filter: grayscale(0.3);\n}\n.sac__node--disabled .sac__node-icon {\n    opacity: 0.4;\n    filter: grayscale(0.8);\n}\n.sac__node--locked .sac__node-icon {\n    opacity: 0.5;\n    border-style: dashed; /* distinct entitlement-gated look */\n}\n.sac__node--coming-soon .sac__node-icon {\n    opacity: 0.5;\n    filter: saturate(0.5);\n}\n.sac__node--disabled,\n.sac__node--coming-soon,\n.sac__node--locked {\n    pointer-events: none;\n    cursor: default;\n}\n\n/* ------------------------------- Motion ------------------------------- */\n@media (prefers-reduced-motion: reduce) {\n    .sac__backdrop,\n    .sac__center,\n    .sac__node,\n    .sac__node-icon,\n    .sac__arc::before {\n        transition: none;\n    }\n}\n/* Scoped under .sap-visual-sample-skin by import-skin CLI. */\n\n\n.sap-visual-sample-skin {\n    --sample-fg: #ffffff;\n    --sample-bg: #1a1a2e;\n}\n\n.sap-visual-sample-skin {\n    margin: 0;\n    padding: 0;\n    background: var(--sample-bg);\n}\n\n.sap-visual-sample-skin .container {\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    justify-content: center;\n    min-height: 160px;\n    gap: 16px;\n}\n\n.sap-visual-sample-skin .title {\n    font-size: 22px;\n    font-weight: 700;\n    letter-spacing: 0.02em;\n}\n\n.sap-visual-sample-skin .ring {\n    width: 64px;\n    height: 64px;\n    border: 3px solid var(--sample-fg);\n    border-radius: 50%;\n    animation: sap-sample-skin-spin 2s linear infinite;\n}\n\n@keyframes sap-sample-skin-spin {\n    from { transform: rotate(0deg); }\n    to { transform: rotate(360deg); }\n}\n\n@media (max-width: 480px) {\n.sap-visual-sample-skin .title {\n        font-size: 16px;\n    }\n}\n/* Visual-slot styles. Every selector is scoped under a `.sap-visual-*` class so\n   ported Workshop-Light components never leak global `body`, `*`, or unscoped\n   rules into the player. New components should follow the same prefix. */\n\n/* ------------------------------- Empty state ------------------------------ */\n.sap-visual-empty {\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    justify-content: center;\n    gap: 6px;\n    min-height: 160px;\n    padding: 24px;\n    border-radius: 14px;\n    border: 1px dashed color-mix(in srgb, var(--ap-text, #fff) 18%, transparent);\n    background-color: color-mix(in srgb, var(--ap-text, #fff) 4%, transparent);\n    color: var(--ap-text, #fff);\n    text-align: center;\n}\n.sap-visual-empty__title {\n    font-size: 14px;\n    font-weight: 600;\n}\n.sap-visual-empty__hint {\n    font-size: 12px;\n    opacity: 0.6;\n}\n\n/* ------------------------------ Lyric display ----------------------------- */\n.sap-visual-lyric {\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    width: 100%;\n    min-height: 160px;\n    max-height: 320px;\n    overflow-y: auto;\n    padding: 16px 12px;\n    color: var(--ap-text, #fff);\n    text-align: center;\n}\n.sap-visual-lyric--empty {\n    align-items: center;\n    justify-content: center;\n    gap: 6px;\n}\n.sap-visual-lyric__empty-title {\n    margin: 0;\n    font-size: 14px;\n    font-weight: 600;\n}\n.sap-visual-lyric__empty-hint {\n    margin: 0;\n    font-size: 12px;\n    opacity: 0.6;\n}\n.sap-visual-lyric__line {\n    margin: 0;\n    opacity: 0.45;\n    transition: opacity 0.25s ease, color 0.25s ease, transform 0.25s ease;\n}\n.sap-visual-lyric__line[data-active=\"true\"] {\n    opacity: 1;\n}\n/* Animation modes (data-animation on the container). `none` disables motion. */\n.sap-visual-lyric[data-animation=\"none\"] .sap-visual-lyric__line {\n    transition: none;\n}\n.sap-visual-lyric[data-animation=\"slide\"] .sap-visual-lyric__line[data-active=\"true\"] {\n    transform: scale(1.04);\n}\n\n/* ------------------------------ Settings panel ---------------------------- */\n.sap-visual-settings {\n    display: flex;\n    flex-direction: column;\n    gap: 14px;\n    padding: 4px 0;\n}\n.sap-visual-field {\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n}\n.sap-visual-field__label {\n    font-size: 12px;\n    font-weight: 600;\n    opacity: 0.8;\n    color: var(--ap-text, #fff);\n}\n.sap-visual-input {\n    width: 100%;\n    accent-color: var(--ap-accent, #7cc4ff);\n    color: var(--ap-text, #fff);\n}\n.sap-visual-input--color {\n    width: 48px;\n    height: 28px;\n    padding: 0;\n    border: none;\n    background: none;\n    cursor: pointer;\n}\nselect.sap-visual-input {\n    padding: 6px 8px;\n    border-radius: 8px;\n    border: 1px solid color-mix(in srgb, var(--ap-text, #fff) 20%, transparent);\n    background-color: color-mix(in srgb, var(--ap-text, #fff) 6%, transparent);\n}\n\n/* ─────────────────────── Visual slot picker / switcher ──────────────────── */\n.sap-visual-switcher {\n    display: flex;\n    flex-direction: column;\n    gap: 10px;\n    padding: 0 0 16px;\n}\n.sap-visual-switcher__label {\n    font-size: 11px;\n    font-weight: 700;\n    text-transform: uppercase;\n    letter-spacing: 0.06em;\n    opacity: 0.55;\n    color: var(--ap-text, #fff);\n}\n.sap-visual-switcher__list {\n    display: flex;\n    flex-wrap: wrap;\n    gap: 8px;\n}\n.sap-visual-switcher__btn {\n    appearance: none;\n    border: 1px solid color-mix(in srgb, var(--ap-text, #fff) 18%, transparent);\n    border-radius: 20px;\n    padding: 6px 16px;\n    font-size: 13px;\n    font-weight: 500;\n    color: var(--ap-text, #fff);\n    background: color-mix(in srgb, var(--ap-text, #fff) 6%, transparent);\n    cursor: pointer;\n    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease,\n        transform 0.12s ease;\n    user-select: none;\n}\n.sap-visual-switcher__btn:hover {\n    background: color-mix(in srgb, var(--ap-text, #fff) 14%, transparent);\n    border-color: color-mix(in srgb, var(--ap-text, #fff) 30%, transparent);\n}\n.sap-visual-switcher__btn:active {\n    transform: scale(0.96);\n}\n.sap-visual-switcher__btn--active {\n    background: var(--ap-accent, #7cc4ff);\n    color: #000;\n    border-color: var(--ap-accent, #7cc4ff);\n    font-weight: 600;\n}\n.sap-visual-switcher__btn--active:hover {\n    background: color-mix(in srgb, var(--ap-accent, #7cc4ff) 85%, #fff);\n    border-color: color-mix(in srgb, var(--ap-accent, #7cc4ff) 85%, #fff);\n}\n\n/* Activity Log Panel — diagnostic event viewer for the SAP Controller sheet.\n   Matches the sheet's dark, glass-forward aesthetic. */\n\n.al {\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n    max-height: 440px;\n    min-height: 200px;\n}\n\n/* ── Toolbar ── */\n\n.al__toolbar {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n    padding: 0 4px;\n}\n\n.al__filters {\n    display: flex;\n    gap: 6px;\n    flex-wrap: wrap;\n}\n\n.al__select,\n.al__search {\n    font-family: inherit;\n    font-size: 12px;\n    font-weight: 500;\n    padding: 6px 10px;\n    border-radius: 8px;\n    border: 1px solid rgba(255, 255, 255, 0.14);\n    background: rgba(255, 255, 255, 0.06);\n    color: inherit;\n    outline: none;\n    min-width: 0;\n}\n\n.al__select {\n    flex: 0 0 auto;\n    cursor: pointer;\n    appearance: auto;\n    -webkit-appearance: auto;\n}\n\n.al__search {\n    flex: 1;\n    min-width: 120px;\n}\n\n.al__search::placeholder {\n    opacity: 0.45;\n}\n\n.al__select:focus,\n.al__search:focus {\n    border-color: var(--ap-accent, #ffffff);\n    box-shadow: 0 0 0 1px var(--ap-accent, rgba(255, 255, 255, 0.3));\n}\n\n/* ── Action buttons ── */\n\n.al__actions {\n    display: flex;\n    gap: 6px;\n    flex-wrap: wrap;\n}\n\n.al__btn {\n    display: inline-flex;\n    align-items: center;\n    gap: 5px;\n    font-family: inherit;\n    font-size: 11px;\n    font-weight: 600;\n    padding: 5px 12px;\n    border-radius: 8px;\n    border: 1px solid rgba(255, 255, 255, 0.14);\n    background: rgba(255, 255, 255, 0.06);\n    color: inherit;\n    cursor: pointer;\n    white-space: nowrap;\n    text-transform: uppercase;\n    letter-spacing: 0.04em;\n    transition: background 0.12s ease, border-color 0.12s ease;\n}\n\n.al__btn:hover {\n    background: rgba(255, 255, 255, 0.12);\n    border-color: rgba(255, 255, 255, 0.28);\n}\n\n.al__btn:focus-visible {\n    outline: 2px solid var(--ap-accent, #ffffff);\n    outline-offset: 1px;\n}\n\n.al__btn--clear {\n    margin-left: auto;\n}\n\n.al__btn--clear:hover {\n    border-color: rgba(255, 80, 80, 0.5);\n    color: #ff6b6b;\n}\n\n.al__btn--copy svg {\n    width: 14px;\n    height: 14px;\n}\n\n.al__icon-copy {\n    display: inline-block;\n    width: 14px;\n    height: 14px;\n    background: currentColor;\n    mask: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='9' y='9' width='13' height='13' rx='2' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E\")\n        center / contain no-repeat;\n    -webkit-mask: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='9' y='9' width='13' height='13' rx='2' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E\")\n        center / contain no-repeat;\n}\n\n/* ── Badge / event count ── */\n\n.al__badge {\n    font-size: 10.5px;\n    font-weight: 600;\n    text-transform: uppercase;\n    letter-spacing: 0.06em;\n    opacity: 0.5;\n    padding: 2px 8px 4px;\n}\n\n/* ── Event list (scrollable) ── */\n\n.al__list {\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    overflow-y: auto;\n    max-height: 360px;\n    overscroll-behavior: contain;\n    padding: 0 2px;\n}\n\n.al__empty {\n    text-align: center;\n    padding: 32px 16px;\n    font-size: 13px;\n    opacity: 0.5;\n}\n\n/* ── Single event row ── */\n\n.al-event {\n    border-radius: 8px;\n    transition: background 0.1s ease;\n}\n\n.al-event:hover {\n    background: rgba(255, 255, 255, 0.04);\n}\n\n.al-event--expanded {\n    background: rgba(255, 255, 255, 0.06);\n}\n\n/* Summary row (always visible) */\n\n.al-event__summary {\n    display: flex;\n    align-items: center;\n    gap: 8px;\n    width: 100%;\n    min-height: 34px;\n    padding: 6px 10px;\n    border: none;\n    background: transparent;\n    color: inherit;\n    font-family: inherit;\n    font-size: 12px;\n    text-align: left;\n    cursor: pointer;\n    border-radius: 8px;\n}\n\n.al-event__summary:focus-visible {\n    outline: 2px solid var(--ap-accent, #ffffff);\n    outline-offset: -2px;\n}\n\n.al-event__time {\n    flex-shrink: 0;\n    font-size: 10px;\n    font-weight: 600;\n    font-variant-numeric: tabular-nums;\n    opacity: 0.45;\n    min-width: 52px;\n}\n\n.al-event__status {\n    flex-shrink: 0;\n    font-size: 9.5px;\n    font-weight: 700;\n    text-transform: uppercase;\n    letter-spacing: 0.04em;\n    padding: 2px 7px;\n    border-radius: 5px;\n    min-width: 38px;\n    text-align: center;\n}\n\n.al-event__status--info {\n    background: rgba(100, 180, 255, 0.18);\n    color: #6cb4ff;\n}\n.al-event__status--warn {\n    background: rgba(255, 190, 60, 0.2);\n    color: #ffc145;\n}\n.al-event__status--error {\n    background: rgba(255, 80, 80, 0.2);\n    color: #ff6b6b;\n}\n.al-event__status--success {\n    background: rgba(60, 210, 120, 0.18);\n    color: #48d97a;\n}\n\n.al-event__area {\n    flex-shrink: 0;\n    font-size: 10.5px;\n    font-weight: 600;\n    opacity: 0.7;\n    min-width: 50px;\n}\n\n.al-event__msg {\n    flex: 1;\n    min-width: 0;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    font-weight: 500;\n    line-height: 1.4;\n}\n\n.al-event__chevron {\n    flex-shrink: 0;\n    font-size: 10px;\n    opacity: 0.4;\n    margin-left: auto;\n    transition: transform 0.15s ease;\n}\n\n.al-event--expanded .al-event__chevron {\n    opacity: 0.7;\n}\n\n/* Expanded details panel */\n\n.al-event__details {\n    display: flex;\n    flex-direction: column;\n    gap: 5px;\n    padding: 2px 12px 10px 12px;\n    border-top: 1px solid rgba(255, 255, 255, 0.06);\n    margin-top: 2px;\n}\n\n.al-event__detail-row {\n    display: flex;\n    align-items: flex-start;\n    gap: 8px;\n    font-size: 11.5px;\n    line-height: 1.5;\n}\n\n.al-event__detail-label {\n    flex-shrink: 0;\n    font-weight: 600;\n    opacity: 0.5;\n    min-width: 46px;\n    text-transform: uppercase;\n    font-size: 9.5px;\n    letter-spacing: 0.04em;\n    padding-top: 2px;\n}\n\n.al-event__detail-val {\n    flex: 1;\n    min-width: 0;\n    font-family: \"SF Mono\", \"Cascadia Code\", \"Fira Code\", \"Consolas\", monospace;\n    font-size: 11px;\n    line-height: 1.55;\n    white-space: pre-wrap;\n    word-break: break-word;\n    background: rgba(0, 0, 0, 0.2);\n    padding: 4px 8px;\n    border-radius: 6px;\n    color: rgba(255, 255, 255, 0.85);\n}\n\n.al-event__detail-val--error {\n    color: #ff6b6b;\n}/* SAP Controller — the shared screen-level command sheet opened from a\n   face's \"…\" button. Bottom sheet on phones, centered dialog on desktop.\n   Lives above the queue drawer (z 100) and the sticky bar (z 50). */\n\n.sap-ctl {\n    position: fixed;\n    inset: 0;\n    z-index: 120;\n    display: flex;\n    align-items: flex-end;\n    justify-content: center;\n    font-family: system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n}\n.sap-ctl__backdrop {\n    position: absolute;\n    inset: 0;\n    background: rgba(0, 0, 0, 0.55);\n    backdrop-filter: blur(6px);\n    -webkit-backdrop-filter: blur(6px);\n}\n.sap-ctl__sheet {\n    position: relative;\n    width: min(480px, 100%);\n    /* vh fallback for browsers without dvh support. */\n    max-height: min(80vh, 640px);\n    max-height: min(80dvh, 640px);\n    overflow-y: auto;\n    -webkit-overflow-scrolling: touch;\n    background: rgba(20, 20, 24, 0.97);\n    color: var(--ap-text, #ffffff);\n    border: 1px solid rgba(255, 255, 255, 0.12);\n    border-bottom: none;\n    border-radius: 16px 16px 0 0;\n    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.5);\n    /* Plain fallback for browsers without env() support. */\n    padding: 8px 16px 16px;\n    padding: 8px 16px calc(16px + env(safe-area-inset-bottom));\n    animation: sap-sheet-in 0.22s ease;\n}\n/* Desktop: centered dialog instead of a bottom sheet. */\n@media (min-width: 640px) {\n    .sap-ctl {\n        align-items: center;\n        padding: 24px;\n    }\n    .sap-ctl__sheet {\n        border-radius: 16px;\n        border-bottom: 1px solid rgba(255, 255, 255, 0.12);\n        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);\n    }\n}\n\n.sap-ctl__grab {\n    width: 40px;\n    height: 4px;\n    border-radius: 999px;\n    background: rgba(255, 255, 255, 0.25);\n    margin: 4px auto 8px;\n}\n@media (min-width: 640px) {\n    .sap-ctl__grab {\n        display: none;\n    }\n}\n\n.sap-ctl__header {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 12px;\n    padding: 2px 4px 6px;\n}\n.sap-ctl__title {\n    margin: 0;\n    font-size: 16px;\n    font-weight: 700;\n    letter-spacing: -0.01em;\n}\n.sap-ctl__close {\n    width: 36px;\n    height: 36px;\n    flex-shrink: 0;\n    border-radius: 50%;\n    border: 1px solid rgba(255, 255, 255, 0.18);\n    background: rgba(255, 255, 255, 0.06);\n    color: inherit;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    cursor: pointer;\n    padding: 0;\n}\n.sap-ctl__close:hover {\n    background: rgba(255, 255, 255, 0.12);\n}\n\n.sap-ctl__section {\n    padding-bottom: 4px;\n}\n.sap-ctl__heading {\n    margin: 12px 4px 4px;\n    font-size: 11px;\n    font-weight: 700;\n    text-transform: uppercase;\n    letter-spacing: 0.08em;\n    opacity: 0.5;\n}\n\n/* Large touch rows (≥48px) — the whole row is the control. */\n.sap-ctl__row {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 12px;\n    width: 100%;\n    min-height: 48px;\n    padding: 10px 12px;\n    border: none;\n    background: transparent;\n    color: inherit;\n    border-radius: 10px;\n    font-size: 15px;\n    font-weight: 500;\n    text-align: left;\n    cursor: pointer;\n}\n.sap-ctl__row:hover {\n    background: rgba(255, 255, 255, 0.08);\n}\n.sap-ctl__row:focus-visible {\n    outline: 2px solid var(--ap-accent, #ffffff);\n    outline-offset: -2px;\n}\n.sap-ctl__label {\n    display: inline-flex;\n    align-items: center;\n    gap: 12px;\n    min-width: 0;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.sap-ctl__label svg {\n    color: var(--ap-accent, #ffffff);\n    flex-shrink: 0;\n}\n.sap-ctl__value {\n    flex-shrink: 0;\n    font-size: 13px;\n    font-weight: 600;\n    opacity: 0.65;\n    text-transform: capitalize;\n}\n\n/* Switch — the .ap-menu__switch pattern, sized up for touch. */\n.sap-ctl__switch {\n    position: relative;\n    width: 40px;\n    height: 22px;\n    border-radius: 999px;\n    background-color: rgba(255, 255, 255, 0.18);\n    flex-shrink: 0;\n    transition: background-color 0.15s ease;\n}\n.sap-ctl__knob {\n    position: absolute;\n    top: 2px;\n    left: 2px;\n    width: 18px;\n    height: 18px;\n    border-radius: 50%;\n    background-color: #ffffff;\n    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);\n    transition: transform 0.15s ease;\n}\n.sap-ctl__switch--on {\n    background-color: var(--ap-accent, #ffffff);\n}\n.sap-ctl__switch--on .sap-ctl__knob {\n    transform: translateX(18px);\n    background-color: var(--ap-play-icon, #000000);\n}\n\n/* Read-only metadata block in the Info section. */\n.sap-ctl__meta {\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n    padding: 8px 12px;\n}\n.sap-ctl__meta-row {\n    display: flex;\n    align-items: baseline;\n    justify-content: space-between;\n    gap: 16px;\n    font-size: 13.5px;\n}\n.sap-ctl__meta-key {\n    flex-shrink: 0;\n    opacity: 0.5;\n    font-weight: 600;\n    text-transform: uppercase;\n    font-size: 10.5px;\n    letter-spacing: 0.06em;\n}\n.sap-ctl__meta-val {\n    min-width: 0;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    text-align: right;\n    font-weight: 500;\n}\n\n/* Lyrics disclosure body — scrolls inside the sheet. */\n.sap-ctl__lyrics {\n    margin: 4px 4px 8px;\n    padding: 12px 14px;\n    border-radius: 10px;\n    background-color: rgba(0, 0, 0, 0.25);\n    border: 1px solid rgba(255, 255, 255, 0.1);\n    font-size: 13.5px;\n    line-height: 1.7;\n    white-space: pre-wrap;\n    max-height: 220px;\n    overflow-y: auto;\n    scroll-behavior: smooth;\n}\n\n.sap-ctl__lyric-line {\n    transition: opacity 0.3s var(--ap-spring), transform 0.3s var(--ap-spring), font-weight 0.3s var(--ap-spring);\n    opacity: 0.4;\n    transform: scale(0.98);\n    transform-origin: left center;\n}\n\n.sap-ctl__lyric-line--active {\n    opacity: 1;\n    font-weight: 700;\n    transform: scale(1);\n    color: var(--ap-text);\n}\n\n/* Plugins list (read-only for V1). */\n.sap-ctl__plugins {\n    list-style: none;\n    margin: 0;\n    padding: 0;\n    display: flex;\n    flex-direction: column;\n}\n.sap-ctl__plugin {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 12px;\n    min-height: 44px;\n    padding: 8px 12px;\n    font-size: 14px;\n    font-weight: 500;\n}\n\n/* Focused-workspace body (non-\"options\" routes). Shares the sheet chrome; the\n   content slot holds the route-specific placeholder surface for now. */\n.sap-ctl__workspace {\n    padding: 4px 0 8px;\n}\n.sap-ctl__workspace-empty {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n    padding: 24px 14px 28px;\n    text-align: center;\n}\n.sap-ctl__workspace-lead {\n    margin: 0;\n    font-size: 15px;\n    font-weight: 700;\n}\n.sap-ctl__workspace-sub {\n    margin: 0;\n    font-size: 13.5px;\n    line-height: 1.5;\n    opacity: 0.6;\n}\n\n@keyframes sap-sheet-in {\n    from {\n        transform: translateY(24px);\n        opacity: 0;\n    }\n    to {\n        transform: none;\n        opacity: 1;\n    }\n}\n@media (prefers-reduced-motion: reduce) {\n    .sap-ctl__sheet {\n        animation: none;\n    }\n    .sap-ctl__switch,\n    .sap-ctl__knob {\n        transition: none;\n    }\n}\n/* Measured marquee. The container clips; the inner span either truncates with\n   an ellipsis (static) or scrolls its overflow (when data-scroll=\"true\"). The\n   component only flips data-scroll on when the text actually overflows and\n   motion is allowed, so these rules never animate text that fits. */\n\n.ap-marquee {\n    min-width: 0;\n    max-width: 100%;\n    overflow: hidden;\n    white-space: nowrap;\n}\n\n.ap-marquee__inner {\n    display: inline-block;\n    max-width: 100%;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    vertical-align: bottom;\n}\n\n/* Scrolling state: let the text exceed the box and travel its overflow, easing\n   to a pause at each end (alternate), GPU-composited via translate3d. */\n.ap-marquee[data-scroll=\"true\"] .ap-marquee__inner {\n    max-width: none;\n    overflow: visible;\n    text-overflow: clip;\n    will-change: transform;\n    animation: ap-marquee-shift var(--ap-marquee-duration, 10s) ease-in-out\n        infinite alternate;\n}\n\n@keyframes ap-marquee-shift {\n    0%,\n    12% {\n        transform: translate3d(0, 0, 0);\n    }\n    88%,\n    100% {\n        transform: translate3d(calc(-1 * var(--ap-marquee-distance, 0px)), 0, 0);\n    }\n}\n\n/* Let people read it: pause while hovered or focused within. */\n.ap-marquee:hover .ap-marquee__inner,\n.ap-marquee:focus-within .ap-marquee__inner {\n    animation-play-state: paused;\n}\n\n@media (prefers-reduced-motion: reduce) {\n    .ap-marquee__inner {\n        animation: none !important;\n        max-width: 100%;\n        overflow: hidden;\n        text-overflow: ellipsis;\n    }\n}\n/* Shared metadata typography. Faces that render <TrackMetadata> inherit a\n   consistent hierarchy; the explicit badge / album / featured classes are also\n   reused inline by the compact faces that keep their own title/artist spans. */\n\n.ap-meta {\n    display: flex;\n    flex-direction: column;\n    min-width: 0;\n}\n\n.ap-meta__primary,\n.ap-meta__secondary,\n.ap-meta__tertiary {\n    min-width: 0;\n}\n\n.ap-meta__title {\n    display: block;\n    font-weight: var(--ap-title-weight, 600);\n    letter-spacing: var(--ap-title-tracking, -0.01em);\n    line-height: var(--ap-title-lh, 1.2);\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n\n.ap-meta__secondary {\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    opacity: 0.66;\n    font-weight: var(--ap-artist-weight, 500);\n    line-height: var(--ap-artist-lh, 1.3);\n}\n\n.ap-meta__featured {\n    opacity: 0.85;\n}\n.ap-meta__album {\n    opacity: 0.85;\n}\n\n.ap-meta__tertiary {\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    opacity: 0.5;\n    font-size: 0.85em;\n    margin-top: 2px;\n}\n\n/* Density presets. Faces can still override via their own scoped rules. */\n.ap-meta--hero .ap-meta__title {\n    font-size: var(--ap-title-size-lg, 24px);\n    letter-spacing: var(--ap-title-tracking, -0.02em);\n}\n.ap-meta--hero .ap-meta__secondary {\n    font-size: var(--ap-artist-size-lg, 15px);\n}\n.ap-meta--compact .ap-meta__title,\n.ap-meta--bar .ap-meta__title {\n    font-size: var(--ap-title-size-md, 15px);\n}\n.ap-meta--compact .ap-meta__secondary,\n.ap-meta--bar .ap-meta__secondary {\n    font-size: var(--ap-artist-size-md, 13px);\n}\n.ap-meta--row .ap-meta__title {\n    font-size: var(--ap-title-size-sm, 14px);\n}\n.ap-meta--row .ap-meta__secondary {\n    font-size: var(--ap-artist-size-sm, 12px);\n}\n\n/* Explicit-content badge. Shared by TrackMetadata and the in-place faces. */\n.ap-explicit-badge {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    flex-shrink: 0;\n    min-width: 14px;\n    height: 14px;\n    padding: 0 3px;\n    margin-left: 6px;\n    border-radius: 3px;\n    font-size: 9px;\n    font-weight: 700;\n    line-height: 1;\n    letter-spacing: 0.04em;\n    vertical-align: middle;\n    background-color: color-mix(in srgb, var(--ap-text, #fff) 20%, transparent);\n    color: var(--ap-text, #fff);\n}\n/* SEIHouse Audio Player — zero-dependency styles.\n   Theming is driven by CSS custom properties set on .ap-root from props. */\n\n.ap-root {\n    --ap-accent: #ffffff;\n    --ap-play-icon: #000000;\n    --ap-text: #ffffff;\n    --ap-progress: #ffffff;\n    --ap-track: rgba(204, 204, 204, 0.35);\n    --ap-bg: rgba(255, 255, 255, 0);\n    --ap-blur: 20px;\n    /* Ambient glow color, transparent by default so it is invisible until a\n       feature (e.g. the Auto Theme plugin) sets it from the artwork. */\n    --ap-glow: transparent;\n    /* Unitless multiplier on the glow's size (1 = default) and a delta\n       applied to every shared button's fill translucency (0% = default\n       fill). Both are user-tunable via the property registry; their\n       fallbacks below reproduce the original hardcoded look exactly. */\n    --ap-glow-intensity: 1;\n    --ap-btn-opacity-delta: 0%;\n    --ap-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);\n\n    position: relative;\n    width: 100%;\n    height: 100%;\n    box-sizing: border-box;\n    padding: 24px;\n    border-radius: 16px;\n    overflow: hidden;\n    background-color: var(--ap-bg);\n    -webkit-backdrop-filter: blur(var(--ap-blur));\n    backdrop-filter: blur(var(--ap-blur));\n    box-shadow: inset 0 0.5px 0.5px rgba(255, 255, 255, 0.1),\n        0 1px 4px rgba(0, 0, 0, 0.08),\n        0 0 calc(60px * var(--ap-glow-intensity, 1))\n            calc(-10px * var(--ap-glow-intensity, 1)) var(--ap-glow);\n    transition: box-shadow 0.4s ease, background-color 0.4s ease, color 0.4s ease;\n    color: var(--ap-text);\n    font-family: system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n    /* Lets the player adapt to the width of whatever surface embeds it\n       (cards, sidebars, phone frames), not just the viewport. */\n    container: ap-player / inline-size;\n}\n\n.ap-root *,\n.ap-root *::before,\n.ap-root *::after {\n    box-sizing: border-box;\n}\n\n/* ----------------------------- Premium material system -----------------------------\n   Shared \"glass\" surface so bright/saturated user colors stay premium AND keep\n   their personality. The chosen --ap-bg hue is the star: a saturation boost\n   keeps it vivid, a directional top sheen reads as light catching glass, and\n   only a whisper of neutral scrim adds depth at the base. Readability is solved\n   locally — text shadows and the buttons' own material separation — NOT by\n   darkening the whole surface, so bright yellow/green/cyan never go olive/muddy.\n   Any face opts in with `.ap-glass-surface`; compact faces (less area for the\n   blur to do contrast work) add the `--compact` modifier for a touch more\n   depth. Faces may override the --ap-mat-* tokens inline to retint. */\n.ap-glass-surface {\n    /* A faint, mostly-bottom scrim for depth — kept low so it darkens without\n       desaturating the hue. The saturate() boost more than compensates. */\n    --ap-mat-scrim: rgba(12, 14, 22, 0.12);\n    /* Directional glass highlight along the top edge (fades out by ~halfway,\n       so the majority of the surface shows the pure, vivid color). */\n    --ap-mat-sheen: rgba(255, 255, 255, 0.22);\n    --ap-mat-border: rgba(255, 255, 255, 0.18);\n    --ap-mat-saturate: 185%;\n    background-color: var(--ap-bg);\n    background-image:\n        linear-gradient(165deg, var(--ap-mat-sheen), transparent 48%),\n        linear-gradient(0deg, var(--ap-mat-scrim), transparent 70%);\n    border: 1px solid var(--ap-mat-border);\n    box-shadow:\n        inset 0 1px 0 rgba(255, 255, 255, 0.22),\n        inset 0 0 0 1px rgba(255, 255, 255, 0.05),\n        0 10px 30px -10px rgba(0, 0, 0, 0.35);\n    -webkit-backdrop-filter: blur(var(--ap-blur, 20px)) saturate(var(--ap-mat-saturate));\n    backdrop-filter: blur(var(--ap-blur, 20px)) saturate(var(--ap-mat-saturate));\n}\n.ap-glass-surface--compact {\n    --ap-mat-scrim: rgba(12, 14, 22, 0.16);\n    --ap-mat-saturate: 178%;\n}\n/* Browsers without backdrop-filter lose the blur + saturation boost, so lean\n   harder on the scrim to keep content readable over a bright surface color. */\n@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {\n    .ap-glass-surface {\n        --ap-mat-scrim: rgba(12, 14, 22, 0.42);\n    }\n    .ap-glass-surface--compact {\n        --ap-mat-scrim: rgba(12, 14, 22, 0.48);\n    }\n}\n\n.ap-sr-only {\n    position: absolute;\n    left: -10000px;\n    width: 1px;\n    height: 1px;\n    overflow: hidden;\n}\n\n.ap-bg-image {\n    position: absolute;\n    inset: 0;\n    background-size: cover;\n    background-position: center;\n    filter: blur(var(--ap-blur));\n    z-index: 0;\n    border-radius: 16px;\n}\n.ap-bg-video {\n    position: absolute;\n    inset: 0;\n    width: 100%;\n    height: 100%;\n    object-fit: cover;\n    object-position: center;\n    filter: blur(var(--ap-blur));\n    z-index: 0;\n    border-radius: 16px;\n    pointer-events: none;\n}\n.ap-bg-darken {\n    position: absolute;\n    inset: 0;\n    z-index: 0;\n    border-radius: 16px;\n}\n\n.ap-content {\n    position: relative;\n    z-index: 1;\n    display: flex;\n    flex-direction: column;\n    gap: 16px;\n    width: 100%;\n}\n\n.ap-content > audio {\n    display: none;\n}\n\n/* ----------------------------- Banners ----------------------------- */\n\n.ap-banner {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n    padding: 16px;\n    border-radius: 8px;\n    font-size: 14px;\n    font-weight: 500;\n}\n.ap-banner--col {\n    flex-direction: column;\n}\n.ap-banner__row {\n    display: flex;\n    align-items: center;\n    gap: 8px;\n}\n.ap-banner--error {\n    background-color: rgba(255, 59, 48, 0.15);\n    border: 1px solid rgba(255, 59, 48, 0.3);\n}\n.ap-banner--error svg {\n    color: #ff3b30;\n}\n.ap-retry-btn {\n    padding: 8px 16px;\n    border: none;\n    border-radius: 6px;\n    background-color: var(--ap-accent);\n    color: var(--ap-play-icon);\n    font-size: 13px;\n    font-weight: 600;\n    cursor: pointer;\n    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);\n}\n\n/* ----------------------------- Top actions (menu) ----------------------------- */\n\n.ap-top-actions {\n    position: absolute;\n    top: 0;\n    right: 0;\n    display: flex;\n    align-items: center;\n    gap: 8px;\n    z-index: 10;\n}\n\n.ap-menu {\n    position: relative;\n}\n.ap-menu__btn {\n    width: 36px;\n    height: 36px;\n    border-radius: 50%;\n    border: 1px solid color-mix(in srgb, var(--ap-accent) 50%, transparent);\n    background-color: color-mix(in srgb, var(--ap-accent) calc(18% + var(--ap-btn-opacity-delta, 0%)), var(--ap-bg));\n    color: var(--ap-accent);\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    cursor: pointer;\n    box-shadow:\n        inset 0 1px 0.5px rgba(255, 255, 255, 0.3),\n        inset 0 -1.5px 2px rgba(0, 0, 0, 0.12),\n        0 0 0 0.5px rgba(0, 0, 0, 0.05),\n        0 2px 7px rgba(0, 0, 0, 0.2);\n    -webkit-backdrop-filter: blur(10px) saturate(140%);\n    backdrop-filter: blur(10px) saturate(140%);\n    padding: 0;\n    transition: transform 0.12s var(--ap-spring), box-shadow 0.18s var(--ap-spring), background-color 0.18s var(--ap-spring),\n        border-color 0.18s var(--ap-spring);\n}\n.ap-menu__btn:hover:not(:disabled) {\n    background-color: color-mix(in srgb, var(--ap-accent) calc(28% + var(--ap-btn-opacity-delta, 0%)), var(--ap-bg));\n    border-color: color-mix(in srgb, var(--ap-accent) 70%, transparent);\n    box-shadow:\n        inset 0 1px 0.5px rgba(255, 255, 255, 0.38),\n        inset 0 -1.5px 2px rgba(0, 0, 0, 0.12),\n        0 0 0 0.5px rgba(0, 0, 0, 0.05),\n        0 4px 11px rgba(0, 0, 0, 0.26);\n}\n.ap-menu__btn:active:not(:disabled) {\n    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);\n}\n.ap-menu__btn[aria-expanded=\"true\"] {\n    background-color: var(--ap-accent);\n    color: var(--ap-play-icon);\n}\n\n/* ----------------------------- Track info ----------------------------- */\n\n.ap-track-counter {\n    text-align: center;\n    font-size: 12px;\n    opacity: 0.5;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-track-info {\n    display: flex;\n    flex-direction: column;\n    gap: 4px;\n    min-width: 0;\n}\n.ap-track-info__title {\n    font-size: 24px;\n    font-weight: 600;\n    letter-spacing: -0.02em;\n    line-height: 1.2;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-track-info__artist {\n    font-size: 15px;\n    font-weight: 500;\n    opacity: 0.7;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n\n/* ----------------------------- Progress bar ----------------------------- */\n\n.ap-progress-group {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n}\n.ap-progress {\n    position: relative;\n    height: 24px;\n    display: flex;\n    align-items: center;\n    cursor: pointer;\n    touch-action: pan-y;\n    outline: none;\n}\n.ap-progress--seeking {\n    touch-action: none;\n    cursor: grabbing;\n}\n.ap-progress__track,\n.ap-progress__buffered,\n.ap-progress__fill {\n    position: absolute;\n    left: 0;\n    height: 8px;\n    border-radius: 4px;\n    pointer-events: none;\n}\n.ap-progress__track {\n    width: 100%;\n    background-color: var(--ap-track);\n    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);\n}\n.ap-progress__buffered {\n    /* `background` (not `background-color`) so --ap-progress may be a gradient. */\n    background: var(--ap-progress);\n    opacity: 0.3;\n}\n.ap-progress__fill {\n    background: var(--ap-progress);\n}\n.ap-progress__thumb {\n    position: absolute;\n    top: 50%;\n    width: 16px;\n    height: 16px;\n    border-radius: 50%;\n    background-color: var(--ap-accent);\n    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);\n    transform: translate(-50%, -50%);\n    pointer-events: none;\n    transition: transform 0.15s var(--ap-spring);\n}\n.ap-progress:hover .ap-progress__thumb,\n.ap-progress--seeking .ap-progress__thumb {\n    transform: translate(-50%, -50%) scale(1.15);\n}\n.ap-progress:focus-visible {\n    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);\n    border-radius: 6px;\n}\n.ap-progress[aria-disabled=\"true\"] {\n    opacity: 0.5;\n    cursor: not-allowed;\n}\n\n.ap-times {\n    display: flex;\n    justify-content: space-between;\n    font-size: 12px;\n    opacity: 0.7;\n}\n\n/* ----------------------------- Waveform scrubber ----------------------------- */\n\n.ap-waveform {\n    position: relative;\n}\n.ap-waveform__surface {\n    position: absolute;\n    inset: 0;\n    cursor: pointer;\n    outline: none;\n}\n.ap-waveform--seeking .ap-waveform__surface {\n    cursor: grabbing;\n}\n.ap-waveform__canvas {\n    position: absolute;\n    inset: 0;\n}\n.ap-waveform__buffered {\n    position: absolute;\n    left: 0;\n    bottom: 0;\n    height: 2px;\n    border-radius: 1px;\n    background-color: var(--ap-progress);\n    opacity: 0.3;\n    pointer-events: none;\n    transition: width 0.2s linear;\n}\n.ap-waveform__surface:focus-visible {\n    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);\n    border-radius: 6px;\n}\n/* ProgressBar fallback while peaks load (or when they can't be produced):\n   vertically centered in the same fixed-height slot so layout never shifts. */\n.ap-waveform__fallback {\n    position: absolute;\n    inset: 0;\n    display: flex;\n    flex-direction: column;\n    justify-content: center;\n}\n@media (prefers-reduced-motion: reduce) {\n    .ap-waveform__buffered {\n        transition: none;\n    }\n}\n\n/* ----------------------------- Transport ----------------------------- */\n\n.ap-transport {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    gap: 12px;\n}\n.ap-btn {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    border-radius: 50%;\n    cursor: pointer;\n    flex-shrink: 0;\n    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);\n    transition: transform 0.12s var(--ap-spring), box-shadow 0.18s var(--ap-spring),\n        background-color 0.18s var(--ap-spring), border-color 0.18s var(--ap-spring);\n}\n.ap-btn svg {\n    animation: ap-pop-in 0.35s var(--ap-spring);\n}\n.ap-btn:disabled {\n    cursor: not-allowed;\n    opacity: 0.5;\n}\n/* Premium glass treatment: a raised, dimensional control instead of a flat\n   icon printed on the surface color. A tinted glass fill (not transparent)\n   plus an inner highlight + soft outer shadow read as a physical button on\n   any surface color, bright or dark. */\n.ap-btn--ghost {\n    width: 40px;\n    height: 40px;\n    border: 1.5px solid color-mix(in srgb, var(--ap-accent) 50%, transparent);\n    background-color: color-mix(in srgb, var(--ap-accent) calc(18% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    color: var(--ap-accent);\n    /* Top highlight + bottom inner shadow = a bevel; the hairline outer ring\n       separates the control from a same-color surface; the soft drop lifts it. */\n    box-shadow:\n        inset 0 1px 0.5px rgba(255, 255, 255, 0.35),\n        inset 0 -2px 3px rgba(0, 0, 0, 0.14),\n        0 0 0 0.5px rgba(0, 0, 0, 0.05),\n        0 3px 8px -2px rgba(0, 0, 0, 0.22);\n    /* Saturate keeps the accent tint vivid through the frosted fill. */\n    -webkit-backdrop-filter: blur(10px) saturate(140%);\n    backdrop-filter: blur(10px) saturate(140%);\n}\n.ap-btn--ghost:hover:not(:disabled) {\n    background-color: color-mix(in srgb, var(--ap-accent) calc(28% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    border-color: color-mix(in srgb, var(--ap-accent) 72%, transparent);\n    box-shadow:\n        inset 0 1px 0.5px rgba(255, 255, 255, 0.42),\n        inset 0 -2px 3px rgba(0, 0, 0, 0.14),\n        0 0 0 0.5px rgba(0, 0, 0, 0.05),\n        0 5px 13px -3px rgba(0, 0, 0, 0.3);\n}\n.ap-btn--ghost:active:not(:disabled) {\n    background-color: color-mix(in srgb, var(--ap-accent) calc(22% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    box-shadow:\n        inset 0 2px 4px rgba(0, 0, 0, 0.28),\n        0 1px 2px rgba(0, 0, 0, 0.12);\n}\n.ap-btn--sm {\n    /* Anchor for the coarse-pointer hit-area pseudo-element. Kept off\n       .ap-btn itself because skins reposition some buttons absolutely. */\n    position: relative;\n    width: 28px;\n    height: 28px;\n    opacity: 0.6;\n}\n.ap-btn--play {\n    width: 60px;\n    height: 60px;\n    /* See-through glass body like the other transport controls — the accent\n       reads through a frosted tint rather than a solid fill, and an accent\n       glow (below) does the work of marking it as the primary control. */\n    border: 1px solid color-mix(in srgb, var(--ap-accent) 60%, transparent);\n    background-color: color-mix(in srgb, var(--ap-accent) calc(24% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    background-image: linear-gradient(165deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.04) 52%, transparent 74%);\n    /* Accent icon (not --ap-play-icon): a dark icon can't be read on a\n       translucent body, and this matches the accent icons of the other\n       transport buttons. */\n    color: var(--ap-accent);\n    -webkit-backdrop-filter: blur(10px) saturate(170%);\n    backdrop-filter: blur(10px) saturate(170%);\n    box-shadow:\n        inset 0 1px 0.5px rgba(255, 255, 255, 0.4),\n        inset 0 -2px 4px rgba(0, 0, 0, 0.12),\n        0 0 0 1px color-mix(in srgb, var(--ap-accent) 28%, transparent),\n        0 0 calc(20px * var(--ap-glow-intensity, 1)) -2px color-mix(in srgb, var(--ap-accent) 60%, transparent),\n        0 6px 16px -6px rgba(0, 0, 0, 0.4);\n}\n.ap-btn--play:hover:not(:disabled) {\n    background-color: color-mix(in srgb, var(--ap-accent) calc(32% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    border-color: color-mix(in srgb, var(--ap-accent) 78%, transparent);\n    box-shadow:\n        inset 0 1px 0.5px rgba(255, 255, 255, 0.48),\n        inset 0 -2px 4px rgba(0, 0, 0, 0.12),\n        0 0 0 1px color-mix(in srgb, var(--ap-accent) 36%, transparent),\n        0 0 calc(30px * var(--ap-glow-intensity, 1)) 0 color-mix(in srgb, var(--ap-accent) 72%, transparent),\n        0 9px 22px -6px rgba(0, 0, 0, 0.45);\n}\n.ap-btn--play:active:not(:disabled) {\n    background-color: color-mix(in srgb, var(--ap-accent) calc(28% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    box-shadow:\n        inset 0 2px 5px rgba(0, 0, 0, 0.22),\n        0 0 calc(16px * var(--ap-glow-intensity, 1)) -2px color-mix(in srgb, var(--ap-accent) 55%, transparent),\n        0 2px 6px -2px rgba(0, 0, 0, 0.3);\n}\n.ap-btn--play-active {\n    animation: ap-pulse 3s ease-in-out infinite;\n}\n\n/* ----------------------------- Volume ----------------------------- */\n\n.ap-volume {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n}\n.ap-icon-btn {\n    position: relative;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    width: 32px;\n    height: 32px;\n    border: 1px solid color-mix(in srgb, var(--ap-text, #fff) 18%, transparent);\n    background-color: color-mix(in srgb, var(--ap-text, #fff) calc(10% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    color: var(--ap-accent);\n    cursor: pointer;\n    border-radius: 9px;\n    /* Frosted glass chip: top highlight + bottom inner shade for a soft bevel,\n       a light drop so it sits above the surface rather than printed on it. */\n    box-shadow:\n        inset 0 1px 0 rgba(255, 255, 255, 0.2),\n        inset 0 -1px 1px rgba(0, 0, 0, 0.1),\n        0 1px 4px rgba(0, 0, 0, 0.16);\n    -webkit-backdrop-filter: blur(8px) saturate(130%);\n    backdrop-filter: blur(8px) saturate(130%);\n    transition: transform 0.12s var(--ap-spring), box-shadow 0.18s var(--ap-spring), background-color 0.18s var(--ap-spring),\n        border-color 0.18s var(--ap-spring);\n}\n.ap-icon-btn svg {\n    animation: ap-pop-in 0.35s var(--ap-spring);\n}\n.ap-icon-btn:hover:not(:disabled) {\n    background-color: color-mix(in srgb, var(--ap-text, #fff) calc(18% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    border-color: color-mix(in srgb, var(--ap-text, #fff) 26%, transparent);\n    box-shadow:\n        inset 0 1px 0 rgba(255, 255, 255, 0.24),\n        inset 0 -1px 1px rgba(0, 0, 0, 0.1),\n        0 2px 7px rgba(0, 0, 0, 0.2);\n}\n.ap-icon-btn:active:not(:disabled) {\n    box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.22);\n}\n.ap-icon-btn:disabled {\n    opacity: 0.5;\n    cursor: not-allowed;\n}\n.ap-volume__slider {\n    position: relative;\n    flex: 1;\n    max-width: 140px;\n    height: 20px;\n    display: flex;\n    align-items: center;\n    cursor: pointer;\n    touch-action: none;\n    outline: none;\n}\n.ap-volume__track,\n.ap-volume__fill {\n    position: absolute;\n    left: 0;\n    height: 6px;\n    border-radius: 3px;\n    pointer-events: none;\n}\n.ap-volume__track {\n    width: 100%;\n    background-color: var(--ap-track);\n}\n.ap-volume__fill {\n    background-color: var(--ap-progress);\n}\n.ap-volume__thumb {\n    position: absolute;\n    top: 50%;\n    width: 12px;\n    height: 12px;\n    border-radius: 50%;\n    background-color: var(--ap-accent);\n    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);\n    transform: translate(-50%, -50%);\n    pointer-events: none;\n}\n.ap-volume__slider:focus-visible {\n    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);\n    border-radius: 6px;\n}\n\n/* ----------------------------- Wide buttons ----------------------------- */\n\n.ap-wide-btn {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n    padding: 12px 24px;\n    border-radius: 8px;\n    font-size: 14px;\n    font-weight: 600;\n    cursor: pointer;\n    text-decoration: none;\n    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15),\n        inset 0 1px 0 rgba(255, 255, 255, 0.2);\n}\n.ap-wide-btn--ghost {\n    background-color: transparent;\n    border: 1px solid var(--ap-accent);\n    color: var(--ap-accent);\n}\n.ap-wide-btn--solid {\n    background-color: var(--ap-accent);\n    color: var(--ap-play-icon);\n    border: none;\n}\n\n/* ----------------------------- Lyrics ----------------------------- */\n\n.ap-lyrics {\n    padding: 16px;\n    border-radius: 8px;\n    background-color: rgba(0, 0, 0, 0.2);\n    border: 1px solid var(--ap-accent);\n    font-size: 14px;\n    line-height: 1.6;\n    white-space: pre-wrap;\n    max-height: 200px;\n    overflow-y: auto;\n}\n\n/* ----------------------------- Tracklist ----------------------------- */\n\n.ap-tracklist {\n    display: flex;\n    flex-direction: column;\n    gap: 4px;\n    margin-top: 8px;\n    padding: 12px;\n    border-radius: 8px;\n    background-color: rgba(0, 0, 0, 0.2);\n    border: 1px solid var(--ap-accent);\n    max-height: 300px;\n    overflow-y: auto;\n}\n.ap-tracklist__item {\n    display: flex;\n    align-items: center;\n    gap: 12px;\n    padding: 10px 12px;\n    border-radius: 6px;\n    background-color: transparent;\n    border: 1px solid transparent;\n    color: var(--ap-text);\n    cursor: pointer;\n    text-align: left;\n    transition: background-color 0.2s ease;\n}\n.ap-tracklist__item:hover {\n    background-color: rgba(255, 255, 255, 0.08);\n}\n.ap-tracklist__item--active {\n    background-color: rgba(255, 255, 255, 0.15);\n    border-color: var(--ap-accent);\n}\n.ap-tracklist__num {\n    min-width: 24px;\n    font-size: 14px;\n    font-weight: 500;\n    opacity: 0.6;\n}\n.ap-tracklist__item--active .ap-tracklist__num {\n    opacity: 1;\n    font-weight: 700;\n}\n.ap-tracklist__meta {\n    flex: 1;\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    overflow: hidden;\n}\n.ap-tracklist__title {\n    font-size: 14px;\n    font-weight: 500;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-tracklist__artist {\n    font-size: 12px;\n    opacity: 0.6;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n\n/* Equalizer bars on the active, playing track. */\n.ap-eq {\n    display: flex;\n    align-items: center;\n    gap: 2px;\n}\n.ap-eq i {\n    width: 3px;\n    height: 12px;\n    border-radius: 2px;\n    background-color: var(--ap-accent);\n    animation: ap-eq 1s ease-in-out infinite;\n}\n.ap-eq i:nth-child(2) {\n    height: 16px;\n    animation-delay: 0.2s;\n}\n.ap-eq i:nth-child(3) {\n    animation-delay: 0.4s;\n}\n\n/* ----------------------------- Animations ----------------------------- */\n\n.ap-tap {\n    transition: transform 0.1s var(--ap-spring);\n}\n.ap-tap:active:not(:disabled) {\n    transform: scale(0.92);\n}\n\n.ap-spin {\n    animation: ap-spin 1s linear infinite;\n    transform-origin: center;\n}\n\n.ap-anim-in {\n    animation: ap-fade-in 0.25s ease;\n}\n\n.ap-root :focus-visible {\n    outline: none;\n}\n.ap-btn:focus-visible,\n.ap-icon-btn:focus-visible,\n.ap-wide-btn:focus-visible,\n.ap-tracklist__item:focus-visible,\n.ap-retry-btn:focus-visible,\n.ap-menu__btn:focus-visible {\n    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);\n}\n\n@keyframes ap-pulse {\n    0%,\n    100% {\n        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15),\n            inset 0 1px 0 rgba(255, 255, 255, 0.2),\n            0 0 0 0 transparent;\n    }\n    50% {\n        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15),\n            inset 0 1px 0 rgba(255, 255, 255, 0.2),\n            0 0 16px 4px var(--ap-accent);\n    }\n}\n@keyframes ap-spin {\n    to {\n        transform: rotate(360deg);\n    }\n}\n@keyframes ap-fade-in {\n    from {\n        opacity: 0;\n        transform: translateY(-6px);\n    }\n    to {\n        opacity: 1;\n        transform: translateY(0);\n    }\n}\n@keyframes ap-eq {\n    0%,\n    100% {\n        opacity: 0.5;\n        transform: scaleY(0.7);\n    }\n    50% {\n        opacity: 1;\n        transform: scaleY(1);\n    }\n}\n@keyframes ap-pop-in {\n    0% {\n        transform: scale(0.6) rotate(-10deg);\n        opacity: 0;\n    }\n    100% {\n        transform: scale(1) rotate(0deg);\n        opacity: 1;\n    }\n}\n\n/* Real mobile viewports (full-bleed player on a phone). */\n@media (max-width: 480px) {\n    .ap-root {\n        padding: 16px;\n    }\n    .ap-content {\n        gap: 12px;\n    }\n    .ap-track-info__title {\n        font-size: clamp(17px, 5.5vw, 22px);\n    }\n    .ap-track-info__artist {\n        font-size: 13px;\n    }\n    .ap-progress__thumb {\n        width: 18px;\n        height: 18px;\n    }\n    .ap-transport {\n        gap: 8px;\n    }\n    .ap-btn--play {\n        width: 56px;\n        height: 56px;\n    }\n    .ap-btn--ghost:not(.ap-btn--sm) {\n        width: 38px;\n        height: 38px;\n    }\n}\n\n/* Narrow embeds (marketplace cards, sidebars, phone frames) where the\n   viewport is wide but the player itself is cramped. Mirrors the mobile\n   media query above, sized against the player's own width. */\n@container ap-player (max-width: 420px) {\n    .ap-content {\n        gap: 12px;\n    }\n    .ap-track-info__title {\n        font-size: clamp(17px, 6.5cqw, 22px);\n    }\n    .ap-track-info__artist {\n        font-size: 13px;\n    }\n    .ap-track-counter {\n        font-size: 11px;\n    }\n    .ap-transport {\n        gap: 8px;\n    }\n    .ap-btn--play {\n        width: 56px;\n        height: 56px;\n    }\n    .ap-btn--ghost:not(.ap-btn--sm) {\n        width: 38px;\n        height: 38px;\n    }\n}\n\n/* Ultra-narrow embeds (deeply nested cards at 320px viewports): shrink the\n   transport one more step so the five-button row never clips. Budget:\n   26 + 34 + 48 + 34 + 26 + 4×6 gaps = 192px. */\n@container ap-player (max-width: 300px) {\n    .ap-transport {\n        gap: 6px;\n    }\n    .ap-btn--play {\n        width: 48px;\n        height: 48px;\n    }\n    .ap-btn--ghost:not(.ap-btn--sm) {\n        width: 34px;\n        height: 34px;\n    }\n    .ap-btn--sm {\n        width: 26px;\n        height: 26px;\n    }\n}\n\n/* Touch devices: grow the hit area to at least 44×44px without changing\n   the visual size. All interactive elements must ensure their total touch\n   target (visual size + pseudo-element expansion) meets 44×44px minimum.\n\n   Approach: expand via an absolutely-positioned ::after pseudo-element.\n   The parent must have position: relative for inset to resolve correctly.\n   Elements already ≥44px (e.g. .ap-btn--play at 60px) don't need expansion. */\n@media (pointer: coarse) {\n    /* Ensure all interactive elements have position context for ::after. */\n    .ap-btn,\n    .ap-btn--sm,\n    .ap-icon-btn,\n    .ap-menu__btn,\n    .ap-q-header__close,\n    .ap-q-row__play-btn,\n    .ap-q-row__remove,\n    .ap-wide-btn,\n    .ap-retry-btn {\n        position: relative;\n    }\n\n    /* Ghost buttons (40×40) need 2px extra per side → 44×44. */\n    .ap-btn--ghost::after {\n        content: \"\";\n        position: absolute;\n        inset: -2px;\n    }\n\n    /* Small ghost buttons (28×28) need 8px per side → 44×44. */\n    .ap-btn--sm::after,\n    /* Icon buttons (32×32) need 6px per side → 44×44. */\n    .ap-icon-btn::after,\n    /* Menu toggle (36×36) needs 4px per side → 44×44. */\n    .ap-menu__btn::after,\n    /* Queue header close (36×36) needs 4px per side → 44×44. */\n    .ap-q-header__close::after,\n    /* Queue row play (28×28) needs 8px per side → 44×44. */\n    .ap-q-row__play-btn::after {\n        content: \"\";\n        position: absolute;\n        inset: -8px;\n    }\n\n    /* Queue row remove (24×24) needs 10px per side → 44×44. */\n    .ap-q-row__remove::after {\n        content: \"\";\n        position: absolute;\n        inset: -10px;\n    }\n    /* Retry button — content-sized, 8px per side is a generous cushion. */\n    .ap-retry-btn::after,\n    /* Wide button — content-sized, 4px per side works. */\n    .ap-wide-btn::after {\n        content: \"\";\n        position: absolute;\n        inset: -8px;\n    }\n\n    /* Progress bar thumb: the visual thumb is ~16px, but the touch target\n       must be 44px. Set the element size to 44px and scale its visual\n       appearance down so it still looks like a 16px dot. */\n    .ap-progress__thumb {\n        width: 44px;\n        height: 44px;\n        transform: translate(-50%, -50%) scale(0.36);\n        transform-origin: center center;\n    }\n    .ap-progress:hover .ap-progress__thumb,\n    .ap-progress--seeking .ap-progress__thumb {\n        transform: translate(-50%, -50%) scale(0.42);\n    }\n\n    /* Volume slider thumb: same approach — 44px touch target, scaled\n       visual to match the original ~12px appearance. */\n    .ap-volume__thumb {\n        width: 44px;\n        height: 44px;\n        transform: translate(-50%, -50%) scale(0.27);\n        transform-origin: center center;\n    }\n}\n\n@media (prefers-reduced-motion: reduce) {\n    .ap-btn--play-active,\n    .ap-spin,\n    .ap-anim-in,\n    .ap-eq i,\n    .ap-tap,\n    .ap-btn,\n    .ap-icon-btn,\n    .ap-menu__btn,\n    .ap-surface-btn {\n        animation: none !important;\n        transition: none !important;\n    }\n}\n\n/* ----------------------------- Upgrades ----------------------------- */\n\n/* Soft informational banner used for non-error states (e.g. autoplay\n   blocked) so it reads as guidance instead of a failure. */\n.ap-banner--info {\n    background-color: rgba(255, 255, 255, 0.08);\n    border: 1px solid rgba(255, 255, 255, 0.18);\n}\n.ap-banner--info svg {\n    color: var(--ap-accent);\n}\n\n/* The error boundary renders an inline fallback when a child crashes. */\n.ap-error-boundary {\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n    padding: 16px;\n    border-radius: 8px;\n    background-color: rgba(255, 59, 48, 0.15);\n    border: 1px solid rgba(255, 59, 48, 0.3);\n    color: var(--ap-text);\n    font-size: 13px;\n    text-align: center;\n}\n.ap-error-boundary__title {\n    margin: 0;\n    font-weight: 600;\n}\n.ap-error-boundary__message {\n    margin: 0;\n    opacity: 0.8;\n    word-break: break-word;\n}\n\n/* iOS / unsupported-volume hint badge. */\n.ap-volume__hint {\n    font-size: 10px;\n    font-weight: 700;\n    letter-spacing: 0.05em;\n    padding: 2px 6px;\n    border-radius: 4px;\n    background-color: rgba(255, 255, 255, 0.15);\n    color: var(--ap-text);\n    text-transform: uppercase;\n    user-select: none;\n}\n\n/* Prevent text selection on long-press drag for the slider tracks so\n   iOS Safari does not highlight them while scrubbing. */\n.ap-progress,\n.ap-volume__slider {\n    user-select: none;\n    -webkit-user-select: none;\n}\n\n/* While the tab is hidden we suspend the equalizer animation so backgrounded\n   tabs do not waste battery / GPU. */\n.ap-root--hidden .ap-eq i,\n.ap-root--hidden .ap-btn--play-active {\n    animation-play-state: paused;\n}\n\n.sap-sleep-timer {\n    display: inline-flex;\n    align-items: center;\n    gap: 6px;\n    align-self: flex-start;\n    margin-top: 8px;\n    color: var(--ap-text);\n    font-size: 12px;\n}\n\n.sap-sleep-timer__label {\n    opacity: 0.72;\n}\n\n.sap-sleep-timer__select {\n    min-width: 128px;\n    height: 30px;\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    border-radius: 6px;\n    background-color: rgba(0, 0, 0, 0.24);\n    color: var(--ap-text);\n    font: inherit;\n    padding: 0 8px;\n}\n\n.sap-sleep-timer__select:focus-visible {\n    outline: 2px solid var(--ap-accent);\n    outline-offset: 2px;\n}\n\n/* ----------------------------- Queue Drawer (Up Next) ----------------------------- */\n\n.ap-q-overlay {\n    position: fixed;\n    inset: 0;\n    z-index: 100;\n    display: flex;\n    justify-content: flex-end;\n    align-items: stretch;\n}\n\n.ap-q-backdrop {\n    position: absolute;\n    inset: 0;\n    background-color: rgba(0, 0, 0, 0.5);\n    cursor: pointer;\n}\n\n.ap-q-drawer {\n    position: relative;\n    width: min(400px, 100vw);\n    max-width: 100vw;\n    height: 100%;\n    background-color: rgba(20, 20, 24, 0.97);\n    backdrop-filter: blur(20px);\n    -webkit-backdrop-filter: blur(20px);\n    border-left: 1px solid rgba(255, 255, 255, 0.1);\n    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);\n    display: flex;\n    flex-direction: column;\n    color: var(--ap-text, #ffffff);\n    font-family: system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n}\n\n.ap-q-header {\n    display: flex;\n    align-items: center;\n    gap: 12px;\n    padding: 20px 20px 12px;\n    border-bottom: 1px solid rgba(255, 255, 255, 0.08);\n    flex-shrink: 0;\n}\n\n.ap-q-header__title {\n    margin: 0;\n    font-size: 18px;\n    font-weight: 700;\n    flex: 1;\n}\n\n.ap-q-header__count {\n    font-size: 13px;\n    opacity: 0.5;\n    font-weight: 500;\n}\n\n.ap-q-header__close {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    width: 36px;\n    height: 36px;\n    border: none;\n    background: transparent;\n    color: var(--ap-text, #ffffff);\n    cursor: pointer;\n    border-radius: 50%;\n    flex-shrink: 0;\n}\n\n.ap-q-header__close:hover {\n    background-color: rgba(255, 255, 255, 0.08);\n}\n\n.ap-q-header__close svg {\n    width: 20px;\n    height: 20px;\n}\n\n/* Queue list */\n.ap-q-list {\n    flex: 1;\n    overflow-y: auto;\n    padding: 8px 0;\n    -webkit-overflow-scrolling: touch;\n}\n\n/* Queue row */\n.ap-q-row {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n    padding: 8px 20px;\n    user-select: none;\n    -webkit-user-select: none;\n    cursor: default;\n    transition: background-color 0.15s ease, transform 0.05s ease;\n    touch-action: none;\n    position: relative;\n    z-index: 1;\n}\n\n.ap-q-row:hover {\n    background-color: rgba(255, 255, 255, 0.04);\n}\n\n.ap-q-row--active {\n    background-color: rgba(255, 255, 255, 0.08);\n}\n\n.ap-q-row--active:hover {\n    background-color: rgba(255, 255, 255, 0.10);\n}\n\n.ap-q-row--dragging {\n    z-index: 10;\n    opacity: 0.9;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n    background-color: rgba(255, 255, 255, 0.10);\n}\n\n.ap-q-row__drag {\n    display: flex;\n    align-items: center;\n    cursor: grab;\n    color: var(--ap-text, #ffffff);\n    opacity: 0.3;\n    flex-shrink: 0;\n    padding: 4px;\n    border-radius: 4px;\n    touch-action: none;\n}\n\n.ap-q-row__drag:hover {\n    opacity: 0.6;\n}\n\n.ap-q-row__drag:active {\n    cursor: grabbing;\n}\n\n.ap-q-row__num {\n    min-width: 24px;\n    font-size: 13px;\n    font-weight: 600;\n    opacity: 0.5;\n    text-align: center;\n    flex-shrink: 0;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.ap-q-row--active .ap-q-row__num {\n    opacity: 1;\n}\n\n.ap-q-row__meta {\n    flex: 1;\n    min-width: 0;\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n}\n\n.ap-q-row__title {\n    font-size: 14px;\n    font-weight: 500;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n\n.ap-q-row--active .ap-q-row__title {\n    font-weight: 600;\n}\n\n.ap-q-row__artist {\n    font-size: 12px;\n    opacity: 0.5;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n\n.ap-q-row__badge {\n    font-size: 10px;\n    font-weight: 700;\n    text-transform: uppercase;\n    letter-spacing: 0.05em;\n    padding: 3px 8px;\n    border-radius: 999px;\n    background-color: var(--ap-accent, #ffffff);\n    color: var(--ap-play-icon, #000000);\n    flex-shrink: 0;\n    white-space: nowrap;\n}\n\n.ap-q-row__play-btn {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    width: 28px;\n    height: 28px;\n    border: none;\n    background: transparent;\n    color: var(--ap-accent, #ffffff);\n    cursor: pointer;\n    border-radius: 50%;\n    flex-shrink: 0;\n    opacity: 0;\n    transition: opacity 0.15s ease;\n}\n\n.ap-q-row:hover .ap-q-row__play-btn {\n    opacity: 1;\n}\n\n.ap-q-row__play-btn:hover {\n    background-color: rgba(255, 255, 255, 0.12);\n}\n\n.ap-q-row__remove {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    width: 24px;\n    height: 24px;\n    border: none;\n    background: transparent;\n    color: var(--ap-text, #ffffff);\n    cursor: pointer;\n    border-radius: 50%;\n    flex-shrink: 0;\n    opacity: 0.2;\n    transition: opacity 0.15s ease, color 0.15s ease;\n}\n\n.ap-q-row:hover .ap-q-row__remove {\n    opacity: 0.5;\n}\n\n.ap-q-row__remove:hover {\n    opacity: 1 !important;\n    color: #ff5a55;\n}\n\n/* Empty state */\n.ap-q-empty {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: 40px 20px;\n    text-align: center;\n    opacity: 0.5;\n    font-size: 14px;\n}\n\n/* Responsive: full-screen drawer on small screens. */\n@media (max-width: 480px) {\n    .ap-q-drawer {\n        width: 100vw;\n        border-left: none;\n    }\n}\n/* Consolidated seek/track controls. Tap seeks 10s; intentional hold skips track. */\n.ap-sr-only {\n    position: absolute;\n    width: 1px;\n    height: 1px;\n    padding: 0;\n    margin: -1px;\n    overflow: hidden;\n    clip: rect(0, 0, 0, 0);\n    white-space: nowrap;\n    border: 0;\n}\n.ap-hold-skip {\n    position: relative;\n    overflow: visible;\n    touch-action: manipulation;\n    user-select: none;\n    -webkit-user-select: none;\n}\n.ap-hold-skip__icon {\n    position: relative;\n    z-index: 1;\n    display: inline-flex;\n}\n.ap-hold-skip__progress {\n    position: absolute;\n    inset: 3px;\n    border-radius: inherit;\n    background: conic-gradient(var(--ap-accent) 0deg, transparent 0deg);\n    opacity: 0;\n    pointer-events: none;\n}\n.ap-hold-skip__progress::after {\n    content: \"\";\n    position: absolute;\n    inset: 3px;\n    border-radius: inherit;\n    background: var(--ap-bg, rgba(20, 20, 24, 0.96));\n}\n.ap-hold-skip--holding:not(:disabled) .ap-hold-skip__progress {\n    opacity: 0.72;\n    animation: ap-hold-skip-progress var(--ap-hold-ms, 1200ms) linear forwards;\n}\n.ap-hold-skip--holding:not(:disabled)::before {\n    content: attr(data-hold-label);\n    position: absolute;\n    left: 50%;\n    bottom: -18px;\n    transform: translateX(-50%);\n    font-size: 9px;\n    font-weight: 700;\n    letter-spacing: 0.08em;\n    text-transform: uppercase;\n    color: var(--ap-accent);\n    opacity: 0.85;\n}\n@keyframes ap-hold-skip-progress {\n    from { background: conic-gradient(var(--ap-accent) 0deg, transparent 0deg); }\n    to { background: conic-gradient(var(--ap-accent) 360deg, transparent 360deg); }\n}\n@media (prefers-reduced-motion: reduce) {\n    .ap-hold-skip--holding:not(:disabled) .ap-hold-skip__progress {\n        animation: none;\n        background: conic-gradient(var(--ap-accent) 270deg, transparent 270deg);\n    }\n}\n/* Session-driven skins. Shared control styling (ap-btn, ap-icon-btn,\n   ap-progress, ap-volume, ap-eq, ap-banner, ap-tap, ...) comes from the base\n   stylesheet; we import it so a page that uses only skins still gets it.\n   Each skin sets the same --ap-* theme tokens on its root (see themeVars.ts),\n   so the reused ProgressBar / VolumeControl inherit the right colors. */\n/* SEIHouse Audio Player — zero-dependency styles.\n   Theming is driven by CSS custom properties set on .ap-root from props. */\n.ap-root {\n    --ap-accent: #ffffff;\n    --ap-play-icon: #000000;\n    --ap-text: #ffffff;\n    --ap-progress: #ffffff;\n    --ap-track: rgba(204, 204, 204, 0.35);\n    --ap-bg: rgba(255, 255, 255, 0);\n    --ap-blur: 20px;\n    /* Ambient glow color, transparent by default so it is invisible until a\n       feature (e.g. the Auto Theme plugin) sets it from the artwork. */\n    --ap-glow: transparent;\n    /* Unitless multiplier on the glow's size (1 = default) and a delta\n       applied to every shared button's fill translucency (0% = default\n       fill). Both are user-tunable via the property registry; their\n       fallbacks below reproduce the original hardcoded look exactly. */\n    --ap-glow-intensity: 1;\n    --ap-btn-opacity-delta: 0%;\n    --ap-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);\n\n    position: relative;\n    width: 100%;\n    height: 100%;\n    box-sizing: border-box;\n    padding: 24px;\n    border-radius: 16px;\n    overflow: hidden;\n    background-color: var(--ap-bg);\n    -webkit-backdrop-filter: blur(var(--ap-blur));\n    backdrop-filter: blur(var(--ap-blur));\n    box-shadow: inset 0 0.5px 0.5px rgba(255, 255, 255, 0.1),\n        0 1px 4px rgba(0, 0, 0, 0.08),\n        0 0 calc(60px * var(--ap-glow-intensity, 1))\n            calc(-10px * var(--ap-glow-intensity, 1)) var(--ap-glow);\n    transition: box-shadow 0.4s ease, background-color 0.4s ease, color 0.4s ease;\n    color: var(--ap-text);\n    font-family: system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n    /* Lets the player adapt to the width of whatever surface embeds it\n       (cards, sidebars, phone frames), not just the viewport. */\n    container: ap-player / inline-size;\n}\n.ap-root *,\n.ap-root *::before,\n.ap-root *::after {\n    box-sizing: border-box;\n}\n/* ----------------------------- Premium material system -----------------------------\n   Shared \"glass\" surface so bright/saturated user colors stay premium AND keep\n   their personality. The chosen --ap-bg hue is the star: a saturation boost\n   keeps it vivid, a directional top sheen reads as light catching glass, and\n   only a whisper of neutral scrim adds depth at the base. Readability is solved\n   locally — text shadows and the buttons' own material separation — NOT by\n   darkening the whole surface, so bright yellow/green/cyan never go olive/muddy.\n   Any face opts in with `.ap-glass-surface`; compact faces (less area for the\n   blur to do contrast work) add the `--compact` modifier for a touch more\n   depth. Faces may override the --ap-mat-* tokens inline to retint. */\n.ap-glass-surface {\n    /* A faint, mostly-bottom scrim for depth — kept low so it darkens without\n       desaturating the hue. The saturate() boost more than compensates. */\n    --ap-mat-scrim: rgba(12, 14, 22, 0.12);\n    /* Directional glass highlight along the top edge (fades out by ~halfway,\n       so the majority of the surface shows the pure, vivid color). */\n    --ap-mat-sheen: rgba(255, 255, 255, 0.22);\n    --ap-mat-border: rgba(255, 255, 255, 0.18);\n    --ap-mat-saturate: 185%;\n    background-color: var(--ap-bg);\n    background-image:\n        linear-gradient(165deg, var(--ap-mat-sheen), transparent 48%),\n        linear-gradient(0deg, var(--ap-mat-scrim), transparent 70%);\n    border: 1px solid var(--ap-mat-border);\n    box-shadow:\n        inset 0 1px 0 rgba(255, 255, 255, 0.22),\n        inset 0 0 0 1px rgba(255, 255, 255, 0.05),\n        0 10px 30px -10px rgba(0, 0, 0, 0.35);\n    -webkit-backdrop-filter: blur(var(--ap-blur, 20px)) saturate(var(--ap-mat-saturate));\n    backdrop-filter: blur(var(--ap-blur, 20px)) saturate(var(--ap-mat-saturate));\n}\n.ap-glass-surface--compact {\n    --ap-mat-scrim: rgba(12, 14, 22, 0.16);\n    --ap-mat-saturate: 178%;\n}\n/* Browsers without backdrop-filter lose the blur + saturation boost, so lean\n   harder on the scrim to keep content readable over a bright surface color. */\n@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {\n    .ap-glass-surface {\n        --ap-mat-scrim: rgba(12, 14, 22, 0.42);\n    }\n    .ap-glass-surface--compact {\n        --ap-mat-scrim: rgba(12, 14, 22, 0.48);\n    }\n}\n.ap-sr-only {\n    position: absolute;\n    left: -10000px;\n    width: 1px;\n    height: 1px;\n    overflow: hidden;\n}\n.ap-bg-image {\n    position: absolute;\n    inset: 0;\n    background-size: cover;\n    background-position: center;\n    filter: blur(var(--ap-blur));\n    z-index: 0;\n    border-radius: 16px;\n}\n.ap-bg-video {\n    position: absolute;\n    inset: 0;\n    width: 100%;\n    height: 100%;\n    object-fit: cover;\n    object-position: center;\n    filter: blur(var(--ap-blur));\n    z-index: 0;\n    border-radius: 16px;\n    pointer-events: none;\n}\n.ap-bg-darken {\n    position: absolute;\n    inset: 0;\n    z-index: 0;\n    border-radius: 16px;\n}\n.ap-content {\n    position: relative;\n    z-index: 1;\n    display: flex;\n    flex-direction: column;\n    gap: 16px;\n    width: 100%;\n}\n.ap-content > audio {\n    display: none;\n}\n/* ----------------------------- Banners ----------------------------- */\n.ap-banner {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n    padding: 16px;\n    border-radius: 8px;\n    font-size: 14px;\n    font-weight: 500;\n}\n.ap-banner--col {\n    flex-direction: column;\n}\n.ap-banner__row {\n    display: flex;\n    align-items: center;\n    gap: 8px;\n}\n.ap-banner--error {\n    background-color: rgba(255, 59, 48, 0.15);\n    border: 1px solid rgba(255, 59, 48, 0.3);\n}\n.ap-banner--error svg {\n    color: #ff3b30;\n}\n.ap-retry-btn {\n    padding: 8px 16px;\n    border: none;\n    border-radius: 6px;\n    background-color: var(--ap-accent);\n    color: var(--ap-play-icon);\n    font-size: 13px;\n    font-weight: 600;\n    cursor: pointer;\n    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);\n}\n/* ----------------------------- Top actions (menu) ----------------------------- */\n.ap-top-actions {\n    position: absolute;\n    top: 0;\n    right: 0;\n    display: flex;\n    align-items: center;\n    gap: 8px;\n    z-index: 10;\n}\n.ap-menu {\n    position: relative;\n}\n.ap-menu__btn {\n    width: 36px;\n    height: 36px;\n    border-radius: 50%;\n    border: 1px solid color-mix(in srgb, var(--ap-accent) 50%, transparent);\n    background-color: color-mix(in srgb, var(--ap-accent) calc(18% + var(--ap-btn-opacity-delta, 0%)), var(--ap-bg));\n    color: var(--ap-accent);\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    cursor: pointer;\n    box-shadow:\n        inset 0 1px 0.5px rgba(255, 255, 255, 0.3),\n        inset 0 -1.5px 2px rgba(0, 0, 0, 0.12),\n        0 0 0 0.5px rgba(0, 0, 0, 0.05),\n        0 2px 7px rgba(0, 0, 0, 0.2);\n    -webkit-backdrop-filter: blur(10px) saturate(140%);\n    backdrop-filter: blur(10px) saturate(140%);\n    padding: 0;\n    transition: transform 0.12s var(--ap-spring), box-shadow 0.18s var(--ap-spring), background-color 0.18s var(--ap-spring),\n        border-color 0.18s var(--ap-spring);\n}\n.ap-menu__btn:hover:not(:disabled) {\n    background-color: color-mix(in srgb, var(--ap-accent) calc(28% + var(--ap-btn-opacity-delta, 0%)), var(--ap-bg));\n    border-color: color-mix(in srgb, var(--ap-accent) 70%, transparent);\n    box-shadow:\n        inset 0 1px 0.5px rgba(255, 255, 255, 0.38),\n        inset 0 -1.5px 2px rgba(0, 0, 0, 0.12),\n        0 0 0 0.5px rgba(0, 0, 0, 0.05),\n        0 4px 11px rgba(0, 0, 0, 0.26);\n}\n.ap-menu__btn:active:not(:disabled) {\n    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);\n}\n.ap-menu__btn[aria-expanded=\"true\"] {\n    background-color: var(--ap-accent);\n    color: var(--ap-play-icon);\n}\n/* ----------------------------- Track info ----------------------------- */\n.ap-track-counter {\n    text-align: center;\n    font-size: 12px;\n    opacity: 0.5;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-track-info {\n    display: flex;\n    flex-direction: column;\n    gap: 4px;\n    min-width: 0;\n}\n.ap-track-info__title {\n    font-size: 24px;\n    font-weight: 600;\n    letter-spacing: -0.02em;\n    line-height: 1.2;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-track-info__artist {\n    font-size: 15px;\n    font-weight: 500;\n    opacity: 0.7;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n/* ----------------------------- Progress bar ----------------------------- */\n.ap-progress-group {\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n}\n.ap-progress {\n    position: relative;\n    height: 24px;\n    display: flex;\n    align-items: center;\n    cursor: pointer;\n    touch-action: pan-y;\n    outline: none;\n}\n.ap-progress--seeking {\n    touch-action: none;\n    cursor: grabbing;\n}\n.ap-progress__track,\n.ap-progress__buffered,\n.ap-progress__fill {\n    position: absolute;\n    left: 0;\n    height: 8px;\n    border-radius: 4px;\n    pointer-events: none;\n}\n.ap-progress__track {\n    width: 100%;\n    background-color: var(--ap-track);\n    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);\n}\n.ap-progress__buffered {\n    /* `background` (not `background-color`) so --ap-progress may be a gradient. */\n    background: var(--ap-progress);\n    opacity: 0.3;\n}\n.ap-progress__fill {\n    background: var(--ap-progress);\n}\n.ap-progress__thumb {\n    position: absolute;\n    top: 50%;\n    width: 16px;\n    height: 16px;\n    border-radius: 50%;\n    background-color: var(--ap-accent);\n    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);\n    transform: translate(-50%, -50%);\n    pointer-events: none;\n    transition: transform 0.15s var(--ap-spring);\n}\n.ap-progress:hover .ap-progress__thumb,\n.ap-progress--seeking .ap-progress__thumb {\n    transform: translate(-50%, -50%) scale(1.15);\n}\n.ap-progress:focus-visible {\n    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);\n    border-radius: 6px;\n}\n.ap-progress[aria-disabled=\"true\"] {\n    opacity: 0.5;\n    cursor: not-allowed;\n}\n.ap-times {\n    display: flex;\n    justify-content: space-between;\n    font-size: 12px;\n    opacity: 0.7;\n}\n/* ----------------------------- Waveform scrubber ----------------------------- */\n.ap-waveform {\n    position: relative;\n}\n.ap-waveform__surface {\n    position: absolute;\n    inset: 0;\n    cursor: pointer;\n    outline: none;\n}\n.ap-waveform--seeking .ap-waveform__surface {\n    cursor: grabbing;\n}\n.ap-waveform__canvas {\n    position: absolute;\n    inset: 0;\n}\n.ap-waveform__buffered {\n    position: absolute;\n    left: 0;\n    bottom: 0;\n    height: 2px;\n    border-radius: 1px;\n    background-color: var(--ap-progress);\n    opacity: 0.3;\n    pointer-events: none;\n    transition: width 0.2s linear;\n}\n.ap-waveform__surface:focus-visible {\n    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);\n    border-radius: 6px;\n}\n/* ProgressBar fallback while peaks load (or when they can't be produced):\n   vertically centered in the same fixed-height slot so layout never shifts. */\n.ap-waveform__fallback {\n    position: absolute;\n    inset: 0;\n    display: flex;\n    flex-direction: column;\n    justify-content: center;\n}\n@media (prefers-reduced-motion: reduce) {\n    .ap-waveform__buffered {\n        transition: none;\n    }\n}\n/* ----------------------------- Transport ----------------------------- */\n.ap-transport {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    gap: 12px;\n}\n.ap-btn {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    border-radius: 50%;\n    cursor: pointer;\n    flex-shrink: 0;\n    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);\n    transition: transform 0.12s var(--ap-spring), box-shadow 0.18s var(--ap-spring),\n        background-color 0.18s var(--ap-spring), border-color 0.18s var(--ap-spring);\n}\n.ap-btn svg {\n    animation: ap-pop-in 0.35s var(--ap-spring);\n}\n.ap-btn:disabled {\n    cursor: not-allowed;\n    opacity: 0.5;\n}\n/* Premium glass treatment: a raised, dimensional control instead of a flat\n   icon printed on the surface color. A tinted glass fill (not transparent)\n   plus an inner highlight + soft outer shadow read as a physical button on\n   any surface color, bright or dark. */\n.ap-btn--ghost {\n    width: 40px;\n    height: 40px;\n    border: 1.5px solid color-mix(in srgb, var(--ap-accent) 50%, transparent);\n    background-color: color-mix(in srgb, var(--ap-accent) calc(18% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    color: var(--ap-accent);\n    /* Top highlight + bottom inner shadow = a bevel; the hairline outer ring\n       separates the control from a same-color surface; the soft drop lifts it. */\n    box-shadow:\n        inset 0 1px 0.5px rgba(255, 255, 255, 0.35),\n        inset 0 -2px 3px rgba(0, 0, 0, 0.14),\n        0 0 0 0.5px rgba(0, 0, 0, 0.05),\n        0 3px 8px -2px rgba(0, 0, 0, 0.22);\n    /* Saturate keeps the accent tint vivid through the frosted fill. */\n    -webkit-backdrop-filter: blur(10px) saturate(140%);\n    backdrop-filter: blur(10px) saturate(140%);\n}\n.ap-btn--ghost:hover:not(:disabled) {\n    background-color: color-mix(in srgb, var(--ap-accent) calc(28% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    border-color: color-mix(in srgb, var(--ap-accent) 72%, transparent);\n    box-shadow:\n        inset 0 1px 0.5px rgba(255, 255, 255, 0.42),\n        inset 0 -2px 3px rgba(0, 0, 0, 0.14),\n        0 0 0 0.5px rgba(0, 0, 0, 0.05),\n        0 5px 13px -3px rgba(0, 0, 0, 0.3);\n}\n.ap-btn--ghost:active:not(:disabled) {\n    background-color: color-mix(in srgb, var(--ap-accent) calc(22% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    box-shadow:\n        inset 0 2px 4px rgba(0, 0, 0, 0.28),\n        0 1px 2px rgba(0, 0, 0, 0.12);\n}\n.ap-btn--sm {\n    /* Anchor for the coarse-pointer hit-area pseudo-element. Kept off\n       .ap-btn itself because skins reposition some buttons absolutely. */\n    position: relative;\n    width: 28px;\n    height: 28px;\n    opacity: 0.6;\n}\n.ap-btn--play {\n    width: 60px;\n    height: 60px;\n    /* See-through glass body like the other transport controls — the accent\n       reads through a frosted tint rather than a solid fill, and an accent\n       glow (below) does the work of marking it as the primary control. */\n    border: 1px solid color-mix(in srgb, var(--ap-accent) 60%, transparent);\n    background-color: color-mix(in srgb, var(--ap-accent) calc(24% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    background-image: linear-gradient(165deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.04) 52%, transparent 74%);\n    /* Accent icon (not --ap-play-icon): a dark icon can't be read on a\n       translucent body, and this matches the accent icons of the other\n       transport buttons. */\n    color: var(--ap-accent);\n    -webkit-backdrop-filter: blur(10px) saturate(170%);\n    backdrop-filter: blur(10px) saturate(170%);\n    box-shadow:\n        inset 0 1px 0.5px rgba(255, 255, 255, 0.4),\n        inset 0 -2px 4px rgba(0, 0, 0, 0.12),\n        0 0 0 1px color-mix(in srgb, var(--ap-accent) 28%, transparent),\n        0 0 calc(20px * var(--ap-glow-intensity, 1)) -2px color-mix(in srgb, var(--ap-accent) 60%, transparent),\n        0 6px 16px -6px rgba(0, 0, 0, 0.4);\n}\n.ap-btn--play:hover:not(:disabled) {\n    background-color: color-mix(in srgb, var(--ap-accent) calc(32% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    border-color: color-mix(in srgb, var(--ap-accent) 78%, transparent);\n    box-shadow:\n        inset 0 1px 0.5px rgba(255, 255, 255, 0.48),\n        inset 0 -2px 4px rgba(0, 0, 0, 0.12),\n        0 0 0 1px color-mix(in srgb, var(--ap-accent) 36%, transparent),\n        0 0 calc(30px * var(--ap-glow-intensity, 1)) 0 color-mix(in srgb, var(--ap-accent) 72%, transparent),\n        0 9px 22px -6px rgba(0, 0, 0, 0.45);\n}\n.ap-btn--play:active:not(:disabled) {\n    background-color: color-mix(in srgb, var(--ap-accent) calc(28% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    box-shadow:\n        inset 0 2px 5px rgba(0, 0, 0, 0.22),\n        0 0 calc(16px * var(--ap-glow-intensity, 1)) -2px color-mix(in srgb, var(--ap-accent) 55%, transparent),\n        0 2px 6px -2px rgba(0, 0, 0, 0.3);\n}\n.ap-btn--play-active {\n    animation: ap-pulse 3s ease-in-out infinite;\n}\n/* ----------------------------- Volume ----------------------------- */\n.ap-volume {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n}\n.ap-icon-btn {\n    position: relative;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    width: 32px;\n    height: 32px;\n    border: 1px solid color-mix(in srgb, var(--ap-text, #fff) 18%, transparent);\n    background-color: color-mix(in srgb, var(--ap-text, #fff) calc(10% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    color: var(--ap-accent);\n    cursor: pointer;\n    border-radius: 9px;\n    /* Frosted glass chip: top highlight + bottom inner shade for a soft bevel,\n       a light drop so it sits above the surface rather than printed on it. */\n    box-shadow:\n        inset 0 1px 0 rgba(255, 255, 255, 0.2),\n        inset 0 -1px 1px rgba(0, 0, 0, 0.1),\n        0 1px 4px rgba(0, 0, 0, 0.16);\n    -webkit-backdrop-filter: blur(8px) saturate(130%);\n    backdrop-filter: blur(8px) saturate(130%);\n    transition: transform 0.12s var(--ap-spring), box-shadow 0.18s var(--ap-spring), background-color 0.18s var(--ap-spring),\n        border-color 0.18s var(--ap-spring);\n}\n.ap-icon-btn svg {\n    animation: ap-pop-in 0.35s var(--ap-spring);\n}\n.ap-icon-btn:hover:not(:disabled) {\n    background-color: color-mix(in srgb, var(--ap-text, #fff) calc(18% + var(--ap-btn-opacity-delta, 0%)), transparent);\n    border-color: color-mix(in srgb, var(--ap-text, #fff) 26%, transparent);\n    box-shadow:\n        inset 0 1px 0 rgba(255, 255, 255, 0.24),\n        inset 0 -1px 1px rgba(0, 0, 0, 0.1),\n        0 2px 7px rgba(0, 0, 0, 0.2);\n}\n.ap-icon-btn:active:not(:disabled) {\n    box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.22);\n}\n.ap-icon-btn:disabled {\n    opacity: 0.5;\n    cursor: not-allowed;\n}\n.ap-volume__slider {\n    position: relative;\n    flex: 1;\n    max-width: 140px;\n    height: 20px;\n    display: flex;\n    align-items: center;\n    cursor: pointer;\n    touch-action: none;\n    outline: none;\n}\n.ap-volume__track,\n.ap-volume__fill {\n    position: absolute;\n    left: 0;\n    height: 6px;\n    border-radius: 3px;\n    pointer-events: none;\n}\n.ap-volume__track {\n    width: 100%;\n    background-color: var(--ap-track);\n}\n.ap-volume__fill {\n    background-color: var(--ap-progress);\n}\n.ap-volume__thumb {\n    position: absolute;\n    top: 50%;\n    width: 12px;\n    height: 12px;\n    border-radius: 50%;\n    background-color: var(--ap-accent);\n    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);\n    transform: translate(-50%, -50%);\n    pointer-events: none;\n}\n.ap-volume__slider:focus-visible {\n    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);\n    border-radius: 6px;\n}\n/* ----------------------------- Wide buttons ----------------------------- */\n.ap-wide-btn {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n    padding: 12px 24px;\n    border-radius: 8px;\n    font-size: 14px;\n    font-weight: 600;\n    cursor: pointer;\n    text-decoration: none;\n    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15),\n        inset 0 1px 0 rgba(255, 255, 255, 0.2);\n}\n.ap-wide-btn--ghost {\n    background-color: transparent;\n    border: 1px solid var(--ap-accent);\n    color: var(--ap-accent);\n}\n.ap-wide-btn--solid {\n    background-color: var(--ap-accent);\n    color: var(--ap-play-icon);\n    border: none;\n}\n/* ----------------------------- Lyrics ----------------------------- */\n.ap-lyrics {\n    padding: 16px;\n    border-radius: 8px;\n    background-color: rgba(0, 0, 0, 0.2);\n    border: 1px solid var(--ap-accent);\n    font-size: 14px;\n    line-height: 1.6;\n    white-space: pre-wrap;\n    max-height: 200px;\n    overflow-y: auto;\n}\n/* ----------------------------- Tracklist ----------------------------- */\n.ap-tracklist {\n    display: flex;\n    flex-direction: column;\n    gap: 4px;\n    margin-top: 8px;\n    padding: 12px;\n    border-radius: 8px;\n    background-color: rgba(0, 0, 0, 0.2);\n    border: 1px solid var(--ap-accent);\n    max-height: 300px;\n    overflow-y: auto;\n}\n.ap-tracklist__item {\n    display: flex;\n    align-items: center;\n    gap: 12px;\n    padding: 10px 12px;\n    border-radius: 6px;\n    background-color: transparent;\n    border: 1px solid transparent;\n    color: var(--ap-text);\n    cursor: pointer;\n    text-align: left;\n    transition: background-color 0.2s ease;\n}\n.ap-tracklist__item:hover {\n    background-color: rgba(255, 255, 255, 0.08);\n}\n.ap-tracklist__item--active {\n    background-color: rgba(255, 255, 255, 0.15);\n    border-color: var(--ap-accent);\n}\n.ap-tracklist__num {\n    min-width: 24px;\n    font-size: 14px;\n    font-weight: 500;\n    opacity: 0.6;\n}\n.ap-tracklist__item--active .ap-tracklist__num {\n    opacity: 1;\n    font-weight: 700;\n}\n.ap-tracklist__meta {\n    flex: 1;\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    overflow: hidden;\n}\n.ap-tracklist__title {\n    font-size: 14px;\n    font-weight: 500;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-tracklist__artist {\n    font-size: 12px;\n    opacity: 0.6;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n/* Equalizer bars on the active, playing track. */\n.ap-eq {\n    display: flex;\n    align-items: center;\n    gap: 2px;\n}\n.ap-eq i {\n    width: 3px;\n    height: 12px;\n    border-radius: 2px;\n    background-color: var(--ap-accent);\n    animation: ap-eq 1s ease-in-out infinite;\n}\n.ap-eq i:nth-child(2) {\n    height: 16px;\n    animation-delay: 0.2s;\n}\n.ap-eq i:nth-child(3) {\n    animation-delay: 0.4s;\n}\n/* ----------------------------- Animations ----------------------------- */\n.ap-tap {\n    transition: transform 0.1s var(--ap-spring);\n}\n.ap-tap:active:not(:disabled) {\n    transform: scale(0.92);\n}\n.ap-spin {\n    animation: ap-spin 1s linear infinite;\n    transform-origin: center;\n}\n.ap-anim-in {\n    animation: ap-fade-in 0.25s ease;\n}\n.ap-root :focus-visible {\n    outline: none;\n}\n.ap-btn:focus-visible,\n.ap-icon-btn:focus-visible,\n.ap-wide-btn:focus-visible,\n.ap-tracklist__item:focus-visible,\n.ap-retry-btn:focus-visible,\n.ap-menu__btn:focus-visible {\n    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);\n}\n@keyframes ap-pulse {\n    0%,\n    100% {\n        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15),\n            inset 0 1px 0 rgba(255, 255, 255, 0.2),\n            0 0 0 0 transparent;\n    }\n    50% {\n        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15),\n            inset 0 1px 0 rgba(255, 255, 255, 0.2),\n            0 0 16px 4px var(--ap-accent);\n    }\n}\n@keyframes ap-spin {\n    to {\n        transform: rotate(360deg);\n    }\n}\n@keyframes ap-fade-in {\n    from {\n        opacity: 0;\n        transform: translateY(-6px);\n    }\n    to {\n        opacity: 1;\n        transform: translateY(0);\n    }\n}\n@keyframes ap-eq {\n    0%,\n    100% {\n        opacity: 0.5;\n        transform: scaleY(0.7);\n    }\n    50% {\n        opacity: 1;\n        transform: scaleY(1);\n    }\n}\n@keyframes ap-pop-in {\n    0% {\n        transform: scale(0.6) rotate(-10deg);\n        opacity: 0;\n    }\n    100% {\n        transform: scale(1) rotate(0deg);\n        opacity: 1;\n    }\n}\n/* Real mobile viewports (full-bleed player on a phone). */\n@media (max-width: 480px) {\n    .ap-root {\n        padding: 16px;\n    }\n    .ap-content {\n        gap: 12px;\n    }\n    .ap-track-info__title {\n        font-size: clamp(17px, 5.5vw, 22px);\n    }\n    .ap-track-info__artist {\n        font-size: 13px;\n    }\n    .ap-progress__thumb {\n        width: 18px;\n        height: 18px;\n    }\n    .ap-transport {\n        gap: 8px;\n    }\n    .ap-btn--play {\n        width: 56px;\n        height: 56px;\n    }\n    .ap-btn--ghost:not(.ap-btn--sm) {\n        width: 38px;\n        height: 38px;\n    }\n}\n/* Narrow embeds (marketplace cards, sidebars, phone frames) where the\n   viewport is wide but the player itself is cramped. Mirrors the mobile\n   media query above, sized against the player's own width. */\n@container ap-player (max-width: 420px) {\n    .ap-content {\n        gap: 12px;\n    }\n    .ap-track-info__title {\n        font-size: clamp(17px, 6.5cqw, 22px);\n    }\n    .ap-track-info__artist {\n        font-size: 13px;\n    }\n    .ap-track-counter {\n        font-size: 11px;\n    }\n    .ap-transport {\n        gap: 8px;\n    }\n    .ap-btn--play {\n        width: 56px;\n        height: 56px;\n    }\n    .ap-btn--ghost:not(.ap-btn--sm) {\n        width: 38px;\n        height: 38px;\n    }\n}\n/* Ultra-narrow embeds (deeply nested cards at 320px viewports): shrink the\n   transport one more step so the five-button row never clips. Budget:\n   26 + 34 + 48 + 34 + 26 + 4×6 gaps = 192px. */\n@container ap-player (max-width: 300px) {\n    .ap-transport {\n        gap: 6px;\n    }\n    .ap-btn--play {\n        width: 48px;\n        height: 48px;\n    }\n    .ap-btn--ghost:not(.ap-btn--sm) {\n        width: 34px;\n        height: 34px;\n    }\n    .ap-btn--sm {\n        width: 26px;\n        height: 26px;\n    }\n}\n/* Touch devices: grow the hit area to at least 44×44px without changing\n   the visual size. All interactive elements must ensure their total touch\n   target (visual size + pseudo-element expansion) meets 44×44px minimum.\n\n   Approach: expand via an absolutely-positioned ::after pseudo-element.\n   The parent must have position: relative for inset to resolve correctly.\n   Elements already ≥44px (e.g. .ap-btn--play at 60px) don't need expansion. */\n@media (pointer: coarse) {\n    /* Ensure all interactive elements have position context for ::after. */\n    .ap-btn,\n    .ap-btn--sm,\n    .ap-icon-btn,\n    .ap-menu__btn,\n    .ap-q-header__close,\n    .ap-q-row__play-btn,\n    .ap-q-row__remove,\n    .ap-wide-btn,\n    .ap-retry-btn {\n        position: relative;\n    }\n\n    /* Ghost buttons (40×40) need 2px extra per side → 44×44. */\n    .ap-btn--ghost::after {\n        content: \"\";\n        position: absolute;\n        inset: -2px;\n    }\n\n    /* Small ghost buttons (28×28) need 8px per side → 44×44. */\n    .ap-btn--sm::after,\n    /* Icon buttons (32×32) need 6px per side → 44×44. */\n    .ap-icon-btn::after,\n    /* Menu toggle (36×36) needs 4px per side → 44×44. */\n    .ap-menu__btn::after,\n    /* Queue header close (36×36) needs 4px per side → 44×44. */\n    .ap-q-header__close::after,\n    /* Queue row play (28×28) needs 8px per side → 44×44. */\n    .ap-q-row__play-btn::after {\n        content: \"\";\n        position: absolute;\n        inset: -8px;\n    }\n\n    /* Queue row remove (24×24) needs 10px per side → 44×44. */\n    .ap-q-row__remove::after {\n        content: \"\";\n        position: absolute;\n        inset: -10px;\n    }\n    /* Retry button — content-sized, 8px per side is a generous cushion. */\n    .ap-retry-btn::after,\n    /* Wide button — content-sized, 4px per side works. */\n    .ap-wide-btn::after {\n        content: \"\";\n        position: absolute;\n        inset: -8px;\n    }\n\n    /* Progress bar thumb: the visual thumb is ~16px, but the touch target\n       must be 44px. Set the element size to 44px and scale its visual\n       appearance down so it still looks like a 16px dot. */\n    .ap-progress__thumb {\n        width: 44px;\n        height: 44px;\n        transform: translate(-50%, -50%) scale(0.36);\n        transform-origin: center center;\n    }\n    .ap-progress:hover .ap-progress__thumb,\n    .ap-progress--seeking .ap-progress__thumb {\n        transform: translate(-50%, -50%) scale(0.42);\n    }\n\n    /* Volume slider thumb: same approach — 44px touch target, scaled\n       visual to match the original ~12px appearance. */\n    .ap-volume__thumb {\n        width: 44px;\n        height: 44px;\n        transform: translate(-50%, -50%) scale(0.27);\n        transform-origin: center center;\n    }\n}\n@media (prefers-reduced-motion: reduce) {\n    .ap-btn--play-active,\n    .ap-spin,\n    .ap-anim-in,\n    .ap-eq i,\n    .ap-tap,\n    .ap-btn,\n    .ap-icon-btn,\n    .ap-menu__btn,\n    .ap-surface-btn {\n        animation: none !important;\n        transition: none !important;\n    }\n}\n/* ----------------------------- Upgrades ----------------------------- */\n/* Soft informational banner used for non-error states (e.g. autoplay\n   blocked) so it reads as guidance instead of a failure. */\n.ap-banner--info {\n    background-color: rgba(255, 255, 255, 0.08);\n    border: 1px solid rgba(255, 255, 255, 0.18);\n}\n.ap-banner--info svg {\n    color: var(--ap-accent);\n}\n/* The error boundary renders an inline fallback when a child crashes. */\n.ap-error-boundary {\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n    padding: 16px;\n    border-radius: 8px;\n    background-color: rgba(255, 59, 48, 0.15);\n    border: 1px solid rgba(255, 59, 48, 0.3);\n    color: var(--ap-text);\n    font-size: 13px;\n    text-align: center;\n}\n.ap-error-boundary__title {\n    margin: 0;\n    font-weight: 600;\n}\n.ap-error-boundary__message {\n    margin: 0;\n    opacity: 0.8;\n    word-break: break-word;\n}\n/* iOS / unsupported-volume hint badge. */\n.ap-volume__hint {\n    font-size: 10px;\n    font-weight: 700;\n    letter-spacing: 0.05em;\n    padding: 2px 6px;\n    border-radius: 4px;\n    background-color: rgba(255, 255, 255, 0.15);\n    color: var(--ap-text);\n    text-transform: uppercase;\n    user-select: none;\n}\n/* Prevent text selection on long-press drag for the slider tracks so\n   iOS Safari does not highlight them while scrubbing. */\n.ap-progress,\n.ap-volume__slider {\n    user-select: none;\n    -webkit-user-select: none;\n}\n/* While the tab is hidden we suspend the equalizer animation so backgrounded\n   tabs do not waste battery / GPU. */\n.ap-root--hidden .ap-eq i,\n.ap-root--hidden .ap-btn--play-active {\n    animation-play-state: paused;\n}\n.sap-sleep-timer {\n    display: inline-flex;\n    align-items: center;\n    gap: 6px;\n    align-self: flex-start;\n    margin-top: 8px;\n    color: var(--ap-text);\n    font-size: 12px;\n}\n.sap-sleep-timer__label {\n    opacity: 0.72;\n}\n.sap-sleep-timer__select {\n    min-width: 128px;\n    height: 30px;\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    border-radius: 6px;\n    background-color: rgba(0, 0, 0, 0.24);\n    color: var(--ap-text);\n    font: inherit;\n    padding: 0 8px;\n}\n.sap-sleep-timer__select:focus-visible {\n    outline: 2px solid var(--ap-accent);\n    outline-offset: 2px;\n}\n/* ----------------------------- Queue Drawer (Up Next) ----------------------------- */\n.ap-q-overlay {\n    position: fixed;\n    inset: 0;\n    z-index: 100;\n    display: flex;\n    justify-content: flex-end;\n    align-items: stretch;\n}\n.ap-q-backdrop {\n    position: absolute;\n    inset: 0;\n    background-color: rgba(0, 0, 0, 0.5);\n    cursor: pointer;\n}\n.ap-q-drawer {\n    position: relative;\n    width: min(400px, 100vw);\n    max-width: 100vw;\n    height: 100%;\n    background-color: rgba(20, 20, 24, 0.97);\n    backdrop-filter: blur(20px);\n    -webkit-backdrop-filter: blur(20px);\n    border-left: 1px solid rgba(255, 255, 255, 0.1);\n    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);\n    display: flex;\n    flex-direction: column;\n    color: var(--ap-text, #ffffff);\n    font-family: system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n}\n.ap-q-header {\n    display: flex;\n    align-items: center;\n    gap: 12px;\n    padding: 20px 20px 12px;\n    border-bottom: 1px solid rgba(255, 255, 255, 0.08);\n    flex-shrink: 0;\n}\n.ap-q-header__title {\n    margin: 0;\n    font-size: 18px;\n    font-weight: 700;\n    flex: 1;\n}\n.ap-q-header__count {\n    font-size: 13px;\n    opacity: 0.5;\n    font-weight: 500;\n}\n.ap-q-header__close {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    width: 36px;\n    height: 36px;\n    border: none;\n    background: transparent;\n    color: var(--ap-text, #ffffff);\n    cursor: pointer;\n    border-radius: 50%;\n    flex-shrink: 0;\n}\n.ap-q-header__close:hover {\n    background-color: rgba(255, 255, 255, 0.08);\n}\n.ap-q-header__close svg {\n    width: 20px;\n    height: 20px;\n}\n/* Queue list */\n.ap-q-list {\n    flex: 1;\n    overflow-y: auto;\n    padding: 8px 0;\n    -webkit-overflow-scrolling: touch;\n}\n/* Queue row */\n.ap-q-row {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n    padding: 8px 20px;\n    user-select: none;\n    -webkit-user-select: none;\n    cursor: default;\n    transition: background-color 0.15s ease, transform 0.05s ease;\n    touch-action: none;\n    position: relative;\n    z-index: 1;\n}\n.ap-q-row:hover {\n    background-color: rgba(255, 255, 255, 0.04);\n}\n.ap-q-row--active {\n    background-color: rgba(255, 255, 255, 0.08);\n}\n.ap-q-row--active:hover {\n    background-color: rgba(255, 255, 255, 0.10);\n}\n.ap-q-row--dragging {\n    z-index: 10;\n    opacity: 0.9;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n    background-color: rgba(255, 255, 255, 0.10);\n}\n.ap-q-row__drag {\n    display: flex;\n    align-items: center;\n    cursor: grab;\n    color: var(--ap-text, #ffffff);\n    opacity: 0.3;\n    flex-shrink: 0;\n    padding: 4px;\n    border-radius: 4px;\n    touch-action: none;\n}\n.ap-q-row__drag:hover {\n    opacity: 0.6;\n}\n.ap-q-row__drag:active {\n    cursor: grabbing;\n}\n.ap-q-row__num {\n    min-width: 24px;\n    font-size: 13px;\n    font-weight: 600;\n    opacity: 0.5;\n    text-align: center;\n    flex-shrink: 0;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n.ap-q-row--active .ap-q-row__num {\n    opacity: 1;\n}\n.ap-q-row__meta {\n    flex: 1;\n    min-width: 0;\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n}\n.ap-q-row__title {\n    font-size: 14px;\n    font-weight: 500;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-q-row--active .ap-q-row__title {\n    font-weight: 600;\n}\n.ap-q-row__artist {\n    font-size: 12px;\n    opacity: 0.5;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-q-row__badge {\n    font-size: 10px;\n    font-weight: 700;\n    text-transform: uppercase;\n    letter-spacing: 0.05em;\n    padding: 3px 8px;\n    border-radius: 999px;\n    background-color: var(--ap-accent, #ffffff);\n    color: var(--ap-play-icon, #000000);\n    flex-shrink: 0;\n    white-space: nowrap;\n}\n.ap-q-row__play-btn {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    width: 28px;\n    height: 28px;\n    border: none;\n    background: transparent;\n    color: var(--ap-accent, #ffffff);\n    cursor: pointer;\n    border-radius: 50%;\n    flex-shrink: 0;\n    opacity: 0;\n    transition: opacity 0.15s ease;\n}\n.ap-q-row:hover .ap-q-row__play-btn {\n    opacity: 1;\n}\n.ap-q-row__play-btn:hover {\n    background-color: rgba(255, 255, 255, 0.12);\n}\n.ap-q-row__remove {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    width: 24px;\n    height: 24px;\n    border: none;\n    background: transparent;\n    color: var(--ap-text, #ffffff);\n    cursor: pointer;\n    border-radius: 50%;\n    flex-shrink: 0;\n    opacity: 0.2;\n    transition: opacity 0.15s ease, color 0.15s ease;\n}\n.ap-q-row:hover .ap-q-row__remove {\n    opacity: 0.5;\n}\n.ap-q-row__remove:hover {\n    opacity: 1 !important;\n    color: #ff5a55;\n}\n/* Empty state */\n.ap-q-empty {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: 40px 20px;\n    text-align: center;\n    opacity: 0.5;\n    font-size: 14px;\n}\n/* Responsive: full-screen drawer on small screens. */\n@media (max-width: 480px) {\n    .ap-q-drawer {\n        width: 100vw;\n        border-left: none;\n    }\n}\n/* Consolidated seek/track controls. Tap seeks 10s; intentional hold skips track. */\n.ap-sr-only {\n    position: absolute;\n    width: 1px;\n    height: 1px;\n    padding: 0;\n    margin: -1px;\n    overflow: hidden;\n    clip: rect(0, 0, 0, 0);\n    white-space: nowrap;\n    border: 0;\n}\n.ap-hold-skip {\n    position: relative;\n    overflow: visible;\n    touch-action: manipulation;\n    user-select: none;\n    -webkit-user-select: none;\n}\n.ap-hold-skip__icon {\n    position: relative;\n    z-index: 1;\n    display: inline-flex;\n}\n.ap-hold-skip__progress {\n    position: absolute;\n    inset: 3px;\n    border-radius: inherit;\n    background: conic-gradient(var(--ap-accent) 0deg, transparent 0deg);\n    opacity: 0;\n    pointer-events: none;\n}\n.ap-hold-skip__progress::after {\n    content: \"\";\n    position: absolute;\n    inset: 3px;\n    border-radius: inherit;\n    background: var(--ap-bg, rgba(20, 20, 24, 0.96));\n}\n.ap-hold-skip--holding:not(:disabled) .ap-hold-skip__progress {\n    opacity: 0.72;\n    animation: ap-hold-skip-progress var(--ap-hold-ms, 1200ms) linear forwards;\n}\n.ap-hold-skip--holding:not(:disabled)::before {\n    content: attr(data-hold-label);\n    position: absolute;\n    left: 50%;\n    bottom: -18px;\n    transform: translateX(-50%);\n    font-size: 9px;\n    font-weight: 700;\n    letter-spacing: 0.08em;\n    text-transform: uppercase;\n    color: var(--ap-accent);\n    opacity: 0.85;\n}\n@keyframes ap-hold-skip-progress {\n    from { background: conic-gradient(var(--ap-accent) 0deg, transparent 0deg); }\n    to { background: conic-gradient(var(--ap-accent) 360deg, transparent 360deg); }\n}\n@media (prefers-reduced-motion: reduce) {\n    .ap-hold-skip--holding:not(:disabled) .ap-hold-skip__progress {\n        animation: none;\n        background: conic-gradient(var(--ap-accent) 270deg, transparent 270deg);\n    }\n}\n/* Phase 1 surface infrastructure — render zones, surface buttons, hero collapse.\n   Tokens (--ap-accent, --ap-text, ...) come from the face root via themeVars. */\n/* ----------------------------- Surface buttons ----------------------------- */\n/* One shared shell for the left (canvas) and right (queue) toggles, so both are\n   visually and behaviorally identical. */\n.ap-surface-actions {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    gap: 12px;\n}\n.ap-surface-btn {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    width: 40px;\n    height: 40px;\n    flex-shrink: 0;\n    border-radius: 12px;\n    border: 1px solid color-mix(in srgb, var(--ap-text, #fff) 20%, transparent);\n    /* A neutral dark base keeps the chip darker than a bright surface (so its\n       icon stays visible on yellow/green), while the --ap-text tint keeps it\n       feeling glassy on dark surfaces. Edge is defined by a dark outer ring +\n       drop shadow that show up regardless of how light the surface color is. */\n    background-color: color-mix(in srgb, var(--ap-text, #fff) calc(12% + var(--ap-btn-opacity-delta, 0%)), rgba(8, 10, 16, 0.16));\n    color: var(--ap-text, #fff);\n    cursor: pointer;\n    box-shadow:\n        inset 0 1px 0 rgba(255, 255, 255, 0.2),\n        inset 0 -1px 1px rgba(0, 0, 0, 0.1),\n        0 0 0 1px rgba(0, 0, 0, 0.1),\n        0 2px 6px rgba(0, 0, 0, 0.2);\n    -webkit-backdrop-filter: blur(8px) saturate(130%);\n    backdrop-filter: blur(8px) saturate(130%);\n    transition: background-color 0.2s ease, border-color 0.2s ease,\n        color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;\n}\n.ap-surface-btn:hover:not(:disabled):not(.ap-surface-btn--active) {\n    background-color: color-mix(in srgb, var(--ap-text, #fff) calc(20% + var(--ap-btn-opacity-delta, 0%)), rgba(8, 10, 16, 0.16));\n    border-color: color-mix(in srgb, var(--ap-text, #fff) 30%, transparent);\n    box-shadow:\n        inset 0 1px 0 rgba(255, 255, 255, 0.24),\n        inset 0 -1px 1px rgba(0, 0, 0, 0.1),\n        0 0 0 1px rgba(0, 0, 0, 0.1),\n        0 3px 9px rgba(0, 0, 0, 0.24);\n}\n.ap-surface-btn:active:not(:disabled) {\n    box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.22);\n}\n.ap-surface-btn:disabled {\n    opacity: 0.5;\n    cursor: not-allowed;\n}\n.ap-surface-btn--active {\n    background-color: color-mix(in srgb, var(--ap-accent) 22%, transparent);\n    border-color: var(--ap-accent);\n    color: var(--ap-accent);\n    box-shadow:\n        inset 0 1px 0 rgba(255, 255, 255, 0.25),\n        0 2px 8px -2px color-mix(in srgb, var(--ap-accent) 50%, transparent);\n}\n/* ----------------------------- SEICanvas host ----------------------------- */\n/* The main visual region. Collapsed by default; animates open via data-open. */\n.ap-sei-canvas-host {\n    overflow: hidden;\n    max-height: 0;\n    opacity: 0;\n    /* `visibility: hidden` also pulls focusable children out of the tab order\n       while closed; transitioning it keeps the open/close animation smooth. */\n    visibility: hidden;\n    transition: max-height 0.28s ease, opacity 0.2s ease, visibility 0.28s;\n}\n.ap-sei-canvas-host[data-open=\"true\"] {\n    max-height: 360px;\n    opacity: 1;\n    visibility: visible;\n}\n.ap-sei-canvas-host__inner {\n    padding: 4px 0;\n}\n.ap-sei-canvas-placeholder {\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    justify-content: center;\n    gap: 6px;\n    min-height: 160px;\n    padding: 24px;\n    border-radius: 14px;\n    border: 1px dashed color-mix(in srgb, var(--ap-text, #fff) 24%, transparent);\n    background-color: color-mix(in srgb, var(--ap-text, #fff) 5%, transparent);\n    color: var(--ap-text, #fff);\n    text-align: center;\n}\n.ap-sei-canvas-placeholder__title {\n    font-size: 14px;\n    font-weight: 600;\n}\n.ap-sei-canvas-placeholder__hint {\n    font-size: 12px;\n    opacity: 0.6;\n}\n/* ----------------------------- Scrubber host ----------------------------- */\n.ap-scrubber-host {\n    display: flex;\n    width: 100%;\n    transition: padding 0.2s ease;\n}\n.ap-scrubber-host > * {\n    flex: 1;\n    min-width: 0;\n}\n.ap-scrubber-host[data-density=\"compact\"] {\n    padding: 2px 0;\n}\n.ap-scrubber-host[data-density=\"standard\"] {\n    padding: 4px 0;\n}\n.ap-scrubber-host[data-density=\"expanded\"] {\n    padding: 10px 0;\n}\n/* ----------------------------- Hero collapse ----------------------------- */\n.ap-hero {\n    display: flex;\n    flex-direction: column;\n    gap: 4px;\n    min-width: 0;\n    text-align: center;\n    transition: gap 0.25s ease;\n}\n.ap-hero__title {\n    font-size: 24px;\n    font-weight: 600;\n    letter-spacing: -0.02em;\n    line-height: 1.2;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    transition: font-size 0.25s ease;\n}\n.ap-hero__artist {\n    font-size: 15px;\n    font-weight: 500;\n    opacity: 0.7;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    transition: font-size 0.25s ease;\n}\n/* Tertiary release line under the artist (expanded hero only). */\n.ap-hero__release {\n    font-size: 12.5px;\n    font-weight: 500;\n    opacity: 0.45;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    margin-top: 1px;\n}\n/* The title marquee lives inside .ap-hero__title and inherits its type; it just\n   provides the clip + scroll, so it must fill the line and not re-truncate. */\n.ap-hero__marquee {\n    max-width: 100%;\n}\n/* Compact identity header: smaller type, art + text in a row, left-aligned. */\n.ap-hero[data-collapsed=\"true\"] {\n    flex-direction: row;\n    align-items: center;\n    gap: 10px;\n    text-align: left;\n}\n.ap-hero[data-collapsed=\"true\"] .ap-hero__title {\n    font-size: 15px;\n}\n.ap-hero[data-collapsed=\"true\"] .ap-hero__artist {\n    font-size: 12px;\n}\n.ap-hero__art {\n    flex-shrink: 0;\n    width: 36px;\n    height: 36px;\n    border-radius: 8px;\n    overflow: hidden;\n}\n.ap-hero__text {\n    min-width: 0;\n}\n/* ----------------------------- In-region queue ----------------------------- */\n.ap-queue-surface {\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n    max-height: 320px;\n    overflow-y: auto;\n    -webkit-overflow-scrolling: touch;\n    text-align: left;\n}\n.ap-queue-surface__head {\n    font-size: 12px;\n    font-weight: 700;\n    text-transform: uppercase;\n    letter-spacing: 0.04em;\n    opacity: 0.6;\n    padding: 2px 4px;\n}\n.ap-queue-surface__empty {\n    font-size: 13px;\n    opacity: 0.6;\n    padding: 12px 4px;\n}\n.ap-queue-surface__list {\n    list-style: none;\n    margin: 0;\n    padding: 0;\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n}\n.ap-queue-surface__row {\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    width: 100%;\n    padding: 8px 10px;\n    border: none;\n    border-radius: 10px;\n    background-color: transparent;\n    color: var(--ap-text, #fff);\n    text-align: left;\n    cursor: pointer;\n    transition: background-color 0.15s ease, transform 0.05s ease;\n}\n.ap-queue-surface__row:hover {\n    background-color: color-mix(in srgb, var(--ap-text, #fff) 6%, transparent);\n}\n.ap-queue-surface__row--current {\n    background-color: color-mix(in srgb, var(--ap-accent) 16%, transparent);\n}\n.ap-queue-surface__title {\n    font-size: 14px;\n    font-weight: 600;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-queue-surface__artist {\n    font-size: 12px;\n    opacity: 0.65;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n/* ----------------------------- Mini surface region ----------------------------- */\n/* Column shell so the compact scrubber and queue surface stack under the\n   existing single-row mini player without altering that row. */\n.ap-ms-shell {\n    box-sizing: border-box;\n    width: 100%;\n    display: flex;\n    flex-direction: column;\n    gap: 8px;\n}\n/* Mini has no canvas; its right queue button reveals this small region. */\n.ap-ms__surface {\n    overflow: hidden;\n    max-height: 0;\n    opacity: 0;\n    /* See .ap-sei-canvas-host: keep closed children out of the tab order. */\n    visibility: hidden;\n    transition: max-height 0.25s ease, opacity 0.18s ease, visibility 0.25s;\n}\n.ap-ms__surface[data-open=\"true\"] {\n    max-height: 260px;\n    opacity: 1;\n    visibility: visible;\n}\n/* ----------------------------- Narrow / motion ----------------------------- */\n@container ap-fc (max-width: 360px) {\n    .ap-sei-canvas-host[data-open=\"true\"] {\n        max-height: 300px;\n    }\n}\n@media (prefers-reduced-motion: reduce) {\n    .ap-surface-btn,\n    .ap-sei-canvas-host,\n    .ap-scrubber-host,\n    .ap-hero,\n    .ap-hero__title,\n    .ap-hero__artist,\n    .ap-queue-surface__row,\n    .ap-ms__surface {\n        transition: none;\n    }\n}\n/* Make a reused ProgressBar fill whatever flex container a skin puts it in\n   (its inner track is absolutely positioned, so the host must supply width).\n   The compact vault row and mini sidebar no longer mount a scrubber — seeking\n   lives on the shared StickyBottom master — so only the bar/sea faces remain. */\n.ap-sb__scrub,\n.ap-sea__progress {\n    flex: 1;\n    min-width: 0;\n    display: flex;\n}\n.ap-sb__scrub .ap-progress,\n.ap-sea__progress .ap-progress {\n    flex: 1;\n}\n/* When a ScrubberCanvasHost wraps a skin's bespoke ProgressBar, the host becomes\n   the flex child that must grow; it then flexes its own child (the ProgressBar\n   via `.ap-scrubber-host > *`), so seek width stays identical. */\n.ap-sb__scrub > .ap-scrubber-host,\n.ap-sea__progress > .ap-scrubber-host {\n    flex: 1;\n    min-width: 0;\n}\n/* ----------------------------- Art / hero sizing -----------------------------\n   Reusable sizing contract for album / hero artwork. Square by default,\n   cover-cropped and centered, and it behaves the same whether the art is a\n   CSS background (gradient or url) or a child <img>. Surfaces override\n   --ap-art-ratio / --ap-art-fit / --ap-art-pos, or use the modifiers. */\n.ap-art {\n    aspect-ratio: var(--ap-art-ratio, 1 / 1);\n    width: 100%;\n    overflow: hidden;\n    background-size: var(--ap-art-fit, cover);\n    background-position: var(--ap-art-pos, center);\n    background-repeat: no-repeat;\n}\n.ap-art > img {\n    width: 100%;\n    height: 100%;\n    object-fit: var(--ap-art-fit, cover);\n    object-position: var(--ap-art-pos, center);\n    display: block;\n}\n.ap-art--contain {\n    --ap-art-fit: contain;\n}\n.ap-art--wide {\n    --ap-art-ratio: 16 / 9;\n}\n/* Hero thumbnail framed inside a larger layout: scales with the player\n   container on mobile instead of overflowing it. */\n.ap-art--frame {\n    width: clamp(96px, 38cqw, 320px);\n}\n/* ----------------------------- Full card ----------------------------- */\n.ap-fc {\n    position: relative;\n    box-sizing: border-box;\n    width: 100%;\n    container: ap-fc / inline-size;\n    padding: 24px;\n    border-radius: 16px;\n    /* Surface visuals (fill, blur, border, shadow) come from `.ap-glass-surface`\n       on this same element — see audio-player.css. */\n    color: var(--ap-text);\n    font-family: system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n    display: flex;\n    flex-direction: column;\n    gap: 16px;\n}\n.ap-fc *,\n.ap-fc *::before,\n.ap-fc *::after {\n    box-sizing: border-box;\n}\n/* Optional full-bleed backdrop (image/video). The layers sit at z-index 0 with\n   the card's radius; the visible card content is lifted above them. We lift only\n   the known content blocks — not QueueDrawer/SAPController, which are their own\n   positioned overlays. */\n.ap-fc__bg {\n    border-radius: 16px;\n}\n.ap-fc__counter,\n.ap-fc__stage,\n.ap-fc__control-dock,\n.ap-fc > .ap-banner {\n    position: relative;\n    z-index: 1;\n}\n/* Collapsed-hero artwork fills the 36px hero art box. */\n.ap-fc__hero-art {\n    width: 100%;\n    height: 100%;\n    object-fit: cover;\n    background-size: cover;\n    background-position: center;\n    background-repeat: no-repeat;\n}\n/* \"…\" trigger pinned to the card's top-right corner; the counter and title\n   below pad around it so text never slides underneath. */\n.ap-fc__menu {\n    position: absolute;\n    top: 12px;\n    right: 12px;\n    z-index: 10;\n}\n.ap-fc__counter {\n    text-align: center;\n    font-size: 12px;\n    opacity: 0.5;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    padding-inline: 44px;\n}\n.ap-fc__stage {\n    display: flex;\n    flex-direction: column;\n    gap: 12px;\n    height: clamp(190px, 44cqw, 320px);\n    min-height: 0;\n    overflow: hidden;\n}\n.ap-fc__stage[data-surface-open=\"false\"] {\n    justify-content: center;\n}\n.ap-fc__stage[data-surface-open=\"true\"] {\n    justify-content: flex-start;\n}\n.ap-fc__stage .ap-hero {\n    flex-shrink: 0;\n}\n.ap-fc__stage .ap-sei-canvas-host {\n    min-height: 0;\n}\n.ap-fc__stage .ap-sei-canvas-host[data-open=\"true\"] {\n    flex: 1 1 auto;\n    max-height: none;\n    min-height: 0;\n}\n.ap-fc__stage .ap-sei-canvas-host__inner {\n    height: 100%;\n    min-height: 0;\n    overflow-y: auto;\n    overscroll-behavior: contain;\n    padding: 4px 0 calc(16px + env(safe-area-inset-bottom, 0px));\n}\n.ap-fc__stage .ap-sei-canvas-placeholder {\n    min-height: 100%;\n}\n.ap-fc__stage .ap-queue-surface {\n    max-height: none;\n    min-height: 100%;\n    overflow-y: auto;\n    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));\n}\n.ap-fc__control-dock {\n    display: flex;\n    flex: 0 0 auto;\n    flex-direction: column;\n    gap: 12px;\n    min-height: 0;\n}\n.ap-fc__info {\n    display: flex;\n    flex-direction: column;\n    gap: 4px;\n    min-width: 0;\n    text-align: center;\n}\n.ap-fc__title {\n    font-size: 24px;\n    font-weight: 600;\n    letter-spacing: -0.02em;\n    line-height: 1.2;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-fc__artist {\n    font-size: 15px;\n    font-weight: 500;\n    opacity: 0.7;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n/* Narrow embeds (sidebars, 320px phones): tighten type and transport so the\n   five-button row fits without clipping. */\n@container ap-fc (max-width: 360px) {\n    .ap-fc__stage {\n        height: clamp(170px, 52cqw, 260px);\n        gap: 10px;\n    }\n    .ap-fc__control-dock {\n        gap: 10px;\n    }\n    .ap-fc__title {\n        font-size: clamp(17px, 6.5cqw, 22px);\n    }\n    .ap-fc__artist {\n        font-size: 13px;\n    }\n    .ap-fc .ap-transport {\n        gap: 8px;\n    }\n    .ap-fc .ap-btn--play {\n        width: 56px;\n        height: 56px;\n    }\n    .ap-fc .ap-btn--ghost:not(.ap-btn--sm) {\n        width: 38px;\n        height: 38px;\n    }\n}\n/* Ultra-narrow embeds: one more shrink step, mirroring the base player. */\n@container ap-fc (max-width: 300px) {\n    .ap-fc__stage {\n        height: 160px;\n    }\n    .ap-fc .ap-transport {\n        gap: 6px;\n    }\n    .ap-fc .ap-btn--play {\n        width: 48px;\n        height: 48px;\n    }\n    .ap-fc .ap-btn--ghost:not(.ap-btn--sm) {\n        width: 34px;\n        height: 34px;\n    }\n    .ap-fc .ap-btn--sm {\n        width: 26px;\n        height: 26px;\n    }\n}\n/* ----------------------------- Vault row ----------------------------- */\n/* Classification color drives the WHOLE row (not just a dot): a solid left rail,\n   a tinted border, hover/active fills, the category chip, and the arc action\n   highlight all derive from `--ap-vault-accent` (set from `Track.vaultCategory`),\n   falling back to the theme `--ap-accent` for uncategorized rows. Tints use\n   `color-mix` so the hue stays subtle and content stays dominant. */\n.ap-vr {\n    box-sizing: border-box;\n    display: flex;\n    align-items: center;\n    gap: 12px;\n    width: 100%;\n    padding: 8px 12px;\n    border-radius: 10px;\n    background-color: var(--ap-bg);\n    color: var(--ap-text);\n    border: 1px solid color-mix(in srgb, var(--ap-vault-accent, var(--ap-accent)) 24%, transparent);\n    /* Solid classification rail down the leading edge — the primary scan cue. */\n    border-left: 3px solid var(--ap-vault-accent, var(--ap-accent));\n    font-family: system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n    transition: background-color 0.2s ease, border-color 0.2s ease;\n    /* Make the row a query container so its layout adapts to the row's own\n       width (mobile, narrow sidebars), independent of the viewport. */\n    container-type: inline-size;\n}\n.ap-vr *,\n.ap-vr *::before,\n.ap-vr *::after {\n    box-sizing: border-box;\n}\n.ap-vr:hover {\n    background-color: color-mix(in srgb, var(--ap-vault-accent, var(--ap-accent)) 8%, var(--ap-bg));\n}\n.ap-vr--active {\n    border-color: color-mix(in srgb, var(--ap-vault-accent, var(--ap-accent)) 55%, transparent);\n    background-color: color-mix(in srgb, var(--ap-vault-accent, var(--ap-accent)) 14%, var(--ap-bg));\n}\n.ap-vr__num {\n    min-width: 20px;\n    text-align: center;\n    font-size: 13px;\n    font-weight: 600;\n    opacity: 0.5;\n}\n.ap-vr__play {\n    /* Anchor for the coarse-pointer hit-area pseudo-element. */\n    position: relative;\n    width: 38px;\n    height: 38px;\n    flex-shrink: 0;\n}\n.ap-vr__meta {\n    flex: 1;\n    min-width: 0;\n    display: flex;\n    flex-direction: column;\n    gap: 3px;\n}\n.ap-vr__title {\n    font-size: 14px;\n    font-weight: 600;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-vr__artist {\n    display: flex;\n    align-items: center;\n    gap: 6px;\n    min-width: 0;\n    font-size: 12px;\n}\n.ap-vr__artist-text {\n    min-width: 0;\n    opacity: 0.6;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-vr__time {\n    font-size: 12px;\n    opacity: 0.7;\n    font-variant-numeric: tabular-nums;\n    flex-shrink: 0;\n}\n/* Vault category identity: a labeled pill in the classification color, derived\n   from `Track.vaultCategory` (via `--ap-vault-accent`). Replaces the old subtle\n   dot so the row type is readable at a glance while scrolling. */\n.ap-vr__chip {\n    flex-shrink: 0;\n    padding: 2px 8px;\n    border-radius: 999px;\n    font-size: 11px;\n    font-weight: 600;\n    line-height: 1.4;\n    white-space: nowrap;\n    color: var(--ap-vault-accent, var(--ap-accent));\n    background-color: color-mix(in srgb, var(--ap-vault-accent, var(--ap-accent)) 16%, transparent);\n    border: 1px solid color-mix(in srgb, var(--ap-vault-accent, var(--ap-accent)) 40%, transparent);\n}\n/* Two placements for the same chip: a leading pill on wide rows (desktop) and a\n   compact inline chip on the artist line for narrow rows (mobile), so the title\n   never has to share its line with the chip. Exactly one shows at a time. */\n.ap-vr__chip--inline {\n    display: none;\n    font-size: 10px;\n    padding: 1px 6px;\n}\n.ap-vr__action {\n    flex-shrink: 0;\n}\n/* Mobile / narrow rows: give the title + artist the room they need. The leading\n   chip and the row number step aside (the colored rail still signals category,\n   and the chip reappears inline on the artist line); the inline time is dropped\n   since seeking lives on the shared StickyBottom scrubber. */\n@container (max-width: 380px) {\n    .ap-vr {\n        gap: 8px;\n        padding: 8px 10px;\n    }\n    .ap-vr__chip--lead {\n        display: none;\n    }\n    .ap-vr__chip--inline {\n        display: inline-flex;\n    }\n    .ap-vr__num,\n    .ap-vr__time {\n        display: none;\n    }\n}\n/* The arc trigger adopts the row's classification color when open/active. */\n.ap-vr__action.ap-surface-btn--active {\n    border-color: var(--ap-vault-accent, var(--ap-accent));\n    background-color: color-mix(in srgb, var(--ap-vault-accent, var(--ap-accent)) 22%, transparent);\n}\n/* ----------------------------- Sticky bottom bar ----------------------------- */\n/* The bar is a container; layout lives on __inner (a container can't style\n   itself with its own container query). */\n.ap-sb {\n    box-sizing: border-box;\n    width: 100%;\n    container: ap-sb / inline-size;\n    background-color: rgba(18, 18, 24, 0.92);\n    -webkit-backdrop-filter: blur(16px);\n    backdrop-filter: blur(16px);\n    border-top: 1px solid rgba(255, 255, 255, 0.1);\n    color: var(--ap-text);\n    font-family: system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n}\n.ap-sb *,\n.ap-sb *::before,\n.ap-sb *::after {\n    box-sizing: border-box;\n}\n.ap-sb--fixed {\n    position: fixed;\n    left: 0;\n    right: 0;\n    bottom: 0;\n    z-index: 50;\n}\n.ap-sb__inner {\n    display: flex;\n    align-items: center;\n    gap: 16px;\n    padding: 12px 20px;\n}\n.ap-sb__meta {\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    min-width: 0;\n    flex: 0 1 clamp(120px, 20cqw, 220px);\n}\n.ap-sb__title {\n    font-size: 14px;\n    font-weight: 600;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-sb__artist {\n    font-size: 12px;\n    opacity: 0.6;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-sb__center {\n    flex: 1;\n    min-width: 0;\n    display: flex;\n    flex-direction: column;\n    gap: 6px;\n    align-items: center;\n}\n.ap-sb__controls {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n    min-width: 0;\n}\n.ap-sb__play {\n    width: 40px;\n    height: 40px;\n}\n.ap-sb__scrub {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n    width: 100%;\n}\n.ap-sb__t {\n    font-size: 11px;\n    opacity: 0.7;\n    font-variant-numeric: tabular-nums;\n    flex-shrink: 0;\n    min-width: 34px;\n    text-align: center;\n}\n.ap-sb__volume {\n    width: 160px;\n    flex-shrink: 0;\n    display: flex;\n    justify-content: flex-end;\n}\n/* ----------------------------- Mini sidebar widget ----------------------------- */\n.ap-ms {\n    box-sizing: border-box;\n    display: flex;\n    align-items: center;\n    gap: 12px;\n    width: 100%;\n    padding: 10px 12px;\n    border-radius: 12px;\n    /* Surface visuals (fill, blur, border, shadow) come from `.ap-glass-surface`\n       on the root element — bright/saturated --ap-bg colors stay legible\n       through a frosted scrim instead of being painted on flat. */\n    color: var(--ap-text);\n    font-family: system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n}\n.ap-ms *,\n.ap-ms *::before,\n.ap-ms *::after {\n    box-sizing: border-box;\n}\n.ap-ms__art {\n    position: relative;\n    overflow: hidden;\n    width: 44px;\n    height: 44px;\n    border-radius: 8px;\n    flex-shrink: 0;\n    background-size: cover;\n    background-position: center;\n    background-repeat: no-repeat;\n    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);\n}\n/* Video artwork layers fill the square art blocks (mini + sea). */\n.ap-ms__bg,\n.ap-sea__bg {\n    border-radius: inherit;\n}\n.ap-ms__art--playing {\n    animation: ap-pulse 3s ease-in-out infinite;\n}\n.ap-ms__meta {\n    flex: 1;\n    min-width: 0;\n    display: flex;\n    flex-direction: column;\n    gap: 2px;\n    /* Local frosted \"now playing\" label: anchors light text so it stays\n       readable over very bright surface colors (white-on-yellow, etc.) without\n       dampening the whole widget. On dark surfaces it reads as a faint chip and\n       stays out of the way. Vertical padding is small enough that the 44px art\n       block still sets the row height — no layout shift. */\n    padding: 3px 10px;\n    border-radius: 9px;\n    background-color: rgba(10, 12, 18, 0.26);\n    -webkit-backdrop-filter: blur(6px);\n    backdrop-filter: blur(6px);\n}\n.ap-ms__title {\n    font-size: 14px;\n    font-weight: 600;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    /* Soft dual halo (tight + diffuse) keeps the title crisp over very bright\n       surface colors, independent of the chosen --ap-text value — readability\n       comes from here, not from darkening the whole widget. */\n    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.32), 0 1px 5px rgba(0, 0, 0, 0.22);\n}\n.ap-ms__artist {\n    font-size: 12px;\n    opacity: 0.68;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.28), 0 1px 4px rgba(0, 0, 0, 0.2);\n}\n.ap-ms__play {\n    /* Anchor for the coarse-pointer hit-area pseudo-element. */\n    position: relative;\n    width: 38px;\n    height: 38px;\n    flex-shrink: 0;\n}\n/* ----------------------------- SEA embed card ----------------------------- */\n.ap-sea {\n    box-sizing: border-box;\n    width: 100%;\n    border-radius: 14px;\n    overflow: hidden;\n    background-color: var(--ap-bg);\n    color: var(--ap-text);\n    font-family: system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);\n}\n.ap-sea *,\n.ap-sea *::before,\n.ap-sea *::after {\n    box-sizing: border-box;\n}\n.ap-sea--active {\n    box-shadow: 0 0 0 2px var(--ap-accent);\n}\n.ap-sea__art {\n    position: relative;\n    width: 100%;\n    aspect-ratio: 1 / 1;\n    background-size: cover;\n    background-position: center;\n}\n.ap-sea__play {\n    position: absolute;\n    left: 50%;\n    top: 50%;\n    transform: translate(-50%, -50%);\n    width: 52px;\n    height: 52px;\n}\n.ap-sea__play.ap-tap:active:not(:disabled) {\n    transform: translate(-50%, -50%) scale(0.92);\n}\n.ap-sea__tag {\n    position: absolute;\n    top: 8px;\n    right: 8px;\n    padding: 3px 8px;\n    border-radius: 999px;\n    font-size: 11px;\n    font-weight: 700;\n    background-color: rgba(0, 0, 0, 0.5);\n    color: #fff;\n}\n.ap-sea__body {\n    padding: 12px 14px 14px;\n    display: flex;\n    flex-direction: column;\n    gap: 4px;\n}\n/* Title/artist row with the Arc action trigger on the right. The text column\n   flexes + truncates (min-width:0 lets ellipsis kick in inside flex); the\n   trigger keeps its fixed footprint and never overlaps the metadata. */\n.ap-sea__head {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n}\n.ap-sea__meta {\n    flex: 1 1 auto;\n    min-width: 0;\n}\n.ap-sea__title {\n    font-size: 15px;\n    font-weight: 600;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-sea__artist {\n    font-size: 13px;\n    opacity: 0.65;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n}\n.ap-sea__progress {\n    margin-top: 6px;\n}\n/* Phase 4: waveform overlay trigger (top-left of the art) + overlay body. */\n.ap-sea__wave-btn {\n    position: absolute;\n    top: 8px;\n    left: 8px;\n    width: 30px;\n    height: 30px;\n    border-radius: 999px;\n    background-color: rgba(0, 0, 0, 0.5);\n    color: #fff;\n}\n.ap-sea__wave-btn[aria-expanded=\"true\"] {\n    background-color: var(--ap-accent, rgba(0, 0, 0, 0.65));\n    color: var(--ap-play-icon, #000);\n}\n/* Arc action trigger: right side of the title/artist row (not overlaid on the\n   artwork). Round + sized to sit comfortably beside two lines of metadata;\n   flex-shrink:0 keeps it from being squeezed by long titles. */\n.ap-sea__action {\n    flex: 0 0 auto;\n    width: 36px;\n    height: 36px;\n    border-radius: 999px;\n}\n.ap-sea__action.ap-surface-btn--active {\n    background-color: var(--ap-accent, rgba(0, 0, 0, 0.65));\n    border-color: var(--ap-accent);\n    color: var(--ap-play-icon, #000);\n}\n.ap-sea__overlay {\n    display: flex;\n    flex-direction: column;\n    gap: 10px;\n    padding: 4px 14px 12px;\n}\n/* Sticky bar responsive behavior (container-based so it also works inside\n   sidebars and demo frames, not just full-bleed at the viewport bottom). */\n@container ap-sb (max-width: 860px) {\n    .ap-sb__volume {\n        display: none;\n    }\n}\n/* Phone widths: meta stacks above the controls + scrubber so nothing\n   competes for one row. Budget at 320px: 296px of content vs ~224px of\n   controls (5 transport buttons + the \"…\" trigger at 8px gaps). */\n@container ap-sb (max-width: 560px) {\n    .ap-sb__inner {\n        flex-wrap: wrap;\n        gap: 6px 10px;\n        padding: 10px 12px;\n    }\n    .ap-sb__meta {\n        flex: 1 1 100%;\n        text-align: center;\n    }\n    .ap-sb__center {\n        flex: 1 1 100%;\n    }\n    .ap-sb__controls {\n        gap: 8px;\n    }\n}\n/* Ultra-narrow embeds (the bar inside a padded card at 320px viewports):\n   tighten gaps and time stamps one more step. */\n@container ap-sb (max-width: 380px) {\n    .ap-sb__controls {\n        gap: 6px;\n    }\n    .ap-sb__scrub {\n        gap: 6px;\n    }\n    .ap-sb__t {\n        min-width: 30px;\n    }\n}\n/* Give the small faces' main play buttons the same coarse-pointer hit-area\n   expansion the base buttons get. */\n@media (pointer: coarse) {\n    .ap-ms__play::after,\n    .ap-vr__play::after,\n    .ap-sea__play::after {\n        content: \"\";\n        position: absolute;\n        inset: -8px;\n    }\n}\n/* =====================================================================\n   NarrativeFace (narrative family) — a faceless story/reader surface.\n   Minimal by design: a soundscape indicator, play/pause, mute + voice\n   level, ambience level, and an optional expand control. No artwork,\n   scrubber, or music chrome. Themed via the shared --ap-* vars.\n   ===================================================================== */\n.ap-nf {\n    box-sizing: border-box;\n    width: 100%;\n    display: flex;\n    align-items: center;\n    gap: 14px;\n    padding: 8px 14px;\n    border-radius: 12px;\n    background-color: var(--ap-bg);\n    -webkit-backdrop-filter: blur(14px);\n    backdrop-filter: blur(14px);\n    border: 1px solid rgba(255, 255, 255, 0.08);\n    color: var(--ap-text);\n    font-family: system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;\n}\n.ap-nf *,\n.ap-nf *::before,\n.ap-nf *::after {\n    box-sizing: border-box;\n}\n.ap-nf--embedded {\n    position: fixed;\n    left: 50%;\n    bottom: 16px;\n    transform: translateX(-50%);\n    width: min(560px, calc(100% - 24px));\n    z-index: 50;\n    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);\n}\n/* Soundscape indicator — a quiet pulse dot + mood label. */\n.ap-nf__scape {\n    display: flex;\n    align-items: center;\n    gap: 8px;\n    min-width: 0;\n    flex: 0 1 auto;\n}\n.ap-nf__dot {\n    width: 9px;\n    height: 9px;\n    border-radius: 50%;\n    background: var(--ap-accent);\n    opacity: 0.35;\n    flex: none;\n}\n.ap-nf--ambient .ap-nf__dot {\n    opacity: 0.7;\n}\n.ap-nf--narrating .ap-nf__dot {\n    opacity: 1;\n    animation: ap-nf-pulse 1.8s ease-in-out infinite;\n}\n@keyframes ap-nf-pulse {\n    0%, 100% { transform: scale(1); opacity: 0.55; }\n    50% { transform: scale(1.35); opacity: 1; }\n}\n@media (prefers-reduced-motion: reduce) {\n    .ap-nf--narrating .ap-nf__dot { animation: none; }\n}\n.ap-nf__mood {\n    font-size: 12px;\n    font-weight: 600;\n    letter-spacing: 0.01em;\n    text-transform: capitalize;\n    opacity: 0.85;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n    max-width: 120px;\n}\n.ap-nf__play {\n    flex: none;\n}\n/* Volume blocks — a small label sitting above the reused control/slider. */\n.ap-nf__vol {\n    display: flex;\n    align-items: center;\n    gap: 6px;\n    min-width: 0;\n}\n.ap-nf__vol--narration {\n    flex: 1 1 auto;\n}\n.ap-nf__vol--ambience {\n    flex: 1 1 auto;\n}\n.ap-nf__vol-label {\n    font-size: 10px;\n    font-weight: 600;\n    letter-spacing: 0.04em;\n    text-transform: uppercase;\n    opacity: 0.55;\n    flex: none;\n}\n.ap-nf__range {\n    width: 100%;\n    min-width: 60px;\n    accent-color: var(--ap-accent);\n    cursor: pointer;\n}\n.ap-nf__range:disabled {\n    opacity: 0.4;\n    cursor: default;\n}\n.ap-nf__expand {\n    flex: none;\n}\n/* Stack the two level controls on narrow embeds. */\n@media (max-width: 460px) {\n    .ap-nf {\n        flex-wrap: wrap;\n        gap: 8px 12px;\n    }\n    .ap-nf__vol--narration,\n    .ap-nf__vol--ambience {\n        flex: 1 1 100%;\n    }\n}\n/*$vite$:1*/";
 	document.head.appendChild(__vite_style__);
@@ -12,9 +13,6 @@
 		__esModule: { value: true },
 		[Symbol.toStringTag]: { value: "Module" }
 	});
-	//#region \0rolldown/runtime.js
-	var __commonJSMin = (cb, mod) => () => (mod || (cb((mod = { exports: {} }).exports, mod), cb = null), mod.exports);
-	//#endregion
 	//#region src/audio-player/core/audio/audioCaches.ts
 	/** Shared decoded-buffer LRU cache for Web Audio playback. */
 	var LRUAudioCache = class {
@@ -8377,739 +8375,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		}), []);
 	}
 	//#endregion
-	//#region node_modules/react/cjs/react-jsx-runtime.production.min.js
-	/**
-	* @license React
-	* react-jsx-runtime.production.min.js
-	*
-	* Copyright (c) Facebook, Inc. and its affiliates.
-	*
-	* This source code is licensed under the MIT license found in the
-	* LICENSE file in the root directory of this source tree.
-	*/
-	var require_react_jsx_runtime_production_min = /* @__PURE__ */ __commonJSMin(((exports) => {
-		var f = require("react"), k$1 = Symbol.for("react.element"), l = Symbol.for("react.fragment"), m$1 = Object.prototype.hasOwnProperty, n = f.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentOwner, p = {
-			key: !0,
-			ref: !0,
-			__self: !0,
-			__source: !0
-		};
-		function q(c, a, g) {
-			var b, d = {}, e = null, h = null;
-			void 0 !== g && (e = "" + g);
-			void 0 !== a.key && (e = "" + a.key);
-			void 0 !== a.ref && (h = a.ref);
-			for (b in a) m$1.call(a, b) && !p.hasOwnProperty(b) && (d[b] = a[b]);
-			if (c && c.defaultProps) for (b in a = c.defaultProps, a) void 0 === d[b] && (d[b] = a[b]);
-			return {
-				$$typeof: k$1,
-				type: c,
-				key: e,
-				ref: h,
-				props: d,
-				_owner: n.current
-			};
-		}
-		exports.Fragment = l;
-		exports.jsx = q;
-		exports.jsxs = q;
-	}));
-	//#endregion
-	//#region node_modules/react/cjs/react-jsx-runtime.development.js
-	/**
-	* @license React
-	* react-jsx-runtime.development.js
-	*
-	* Copyright (c) Facebook, Inc. and its affiliates.
-	*
-	* This source code is licensed under the MIT license found in the
-	* LICENSE file in the root directory of this source tree.
-	*/
-	var require_react_jsx_runtime_development = /* @__PURE__ */ __commonJSMin(((exports) => {
-		if (process.env.NODE_ENV !== "production") (function() {
-			"use strict";
-			var React = require("react");
-			var REACT_ELEMENT_TYPE = Symbol.for("react.element");
-			var REACT_PORTAL_TYPE = Symbol.for("react.portal");
-			var REACT_FRAGMENT_TYPE = Symbol.for("react.fragment");
-			var REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode");
-			var REACT_PROFILER_TYPE = Symbol.for("react.profiler");
-			var REACT_PROVIDER_TYPE = Symbol.for("react.provider");
-			var REACT_CONTEXT_TYPE = Symbol.for("react.context");
-			var REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref");
-			var REACT_SUSPENSE_TYPE = Symbol.for("react.suspense");
-			var REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list");
-			var REACT_MEMO_TYPE = Symbol.for("react.memo");
-			var REACT_LAZY_TYPE = Symbol.for("react.lazy");
-			var REACT_OFFSCREEN_TYPE = Symbol.for("react.offscreen");
-			var MAYBE_ITERATOR_SYMBOL = Symbol.iterator;
-			var FAUX_ITERATOR_SYMBOL = "@@iterator";
-			function getIteratorFn(maybeIterable) {
-				if (maybeIterable === null || typeof maybeIterable !== "object") return null;
-				var maybeIterator = MAYBE_ITERATOR_SYMBOL && maybeIterable[MAYBE_ITERATOR_SYMBOL] || maybeIterable[FAUX_ITERATOR_SYMBOL];
-				if (typeof maybeIterator === "function") return maybeIterator;
-				return null;
-			}
-			var ReactSharedInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
-			function error(format) {
-				for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) args[_key2 - 1] = arguments[_key2];
-				printWarning("error", format, args);
-			}
-			function printWarning(level, format, args) {
-				var stack = ReactSharedInternals.ReactDebugCurrentFrame.getStackAddendum();
-				if (stack !== "") {
-					format += "%s";
-					args = args.concat([stack]);
-				}
-				var argsWithFormat = args.map(function(item) {
-					return String(item);
-				});
-				argsWithFormat.unshift("Warning: " + format);
-				Function.prototype.apply.call(console[level], console, argsWithFormat);
-			}
-			var enableScopeAPI = false;
-			var enableCacheElement = false;
-			var enableTransitionTracing = false;
-			var enableLegacyHidden = false;
-			var enableDebugTracing = false;
-			var REACT_MODULE_REFERENCE = Symbol.for("react.module.reference");
-			function isValidElementType(type) {
-				if (typeof type === "string" || typeof type === "function") return true;
-				if (type === REACT_FRAGMENT_TYPE || type === REACT_PROFILER_TYPE || enableDebugTracing || type === REACT_STRICT_MODE_TYPE || type === REACT_SUSPENSE_TYPE || type === REACT_SUSPENSE_LIST_TYPE || enableLegacyHidden || type === REACT_OFFSCREEN_TYPE || enableScopeAPI || enableCacheElement || enableTransitionTracing) return true;
-				if (typeof type === "object" && type !== null) {
-					if (type.$$typeof === REACT_LAZY_TYPE || type.$$typeof === REACT_MEMO_TYPE || type.$$typeof === REACT_PROVIDER_TYPE || type.$$typeof === REACT_CONTEXT_TYPE || type.$$typeof === REACT_FORWARD_REF_TYPE || type.$$typeof === REACT_MODULE_REFERENCE || type.getModuleId !== void 0) return true;
-				}
-				return false;
-			}
-			function getWrappedName(outerType, innerType, wrapperName) {
-				var displayName = outerType.displayName;
-				if (displayName) return displayName;
-				var functionName = innerType.displayName || innerType.name || "";
-				return functionName !== "" ? wrapperName + "(" + functionName + ")" : wrapperName;
-			}
-			function getContextName(type) {
-				return type.displayName || "Context";
-			}
-			function getComponentNameFromType(type) {
-				if (type == null) return null;
-				if (typeof type.tag === "number") error("Received an unexpected object in getComponentNameFromType(). This is likely a bug in React. Please file an issue.");
-				if (typeof type === "function") return type.displayName || type.name || null;
-				if (typeof type === "string") return type;
-				switch (type) {
-					case REACT_FRAGMENT_TYPE: return "Fragment";
-					case REACT_PORTAL_TYPE: return "Portal";
-					case REACT_PROFILER_TYPE: return "Profiler";
-					case REACT_STRICT_MODE_TYPE: return "StrictMode";
-					case REACT_SUSPENSE_TYPE: return "Suspense";
-					case REACT_SUSPENSE_LIST_TYPE: return "SuspenseList";
-				}
-				if (typeof type === "object") switch (type.$$typeof) {
-					case REACT_CONTEXT_TYPE: return getContextName(type) + ".Consumer";
-					case REACT_PROVIDER_TYPE: return getContextName(type._context) + ".Provider";
-					case REACT_FORWARD_REF_TYPE: return getWrappedName(type, type.render, "ForwardRef");
-					case REACT_MEMO_TYPE:
-						var outerName = type.displayName || null;
-						if (outerName !== null) return outerName;
-						return getComponentNameFromType(type.type) || "Memo";
-					case REACT_LAZY_TYPE:
-						var lazyComponent = type;
-						var payload = lazyComponent._payload;
-						var init = lazyComponent._init;
-						try {
-							return getComponentNameFromType(init(payload));
-						} catch (x) {
-							return null;
-						}
-				}
-				return null;
-			}
-			var assign = Object.assign;
-			var disabledDepth = 0;
-			var prevLog;
-			var prevInfo;
-			var prevWarn;
-			var prevError;
-			var prevGroup;
-			var prevGroupCollapsed;
-			var prevGroupEnd;
-			function disabledLog() {}
-			disabledLog.__reactDisabledLog = true;
-			function disableLogs() {
-				if (disabledDepth === 0) {
-					prevLog = console.log;
-					prevInfo = console.info;
-					prevWarn = console.warn;
-					prevError = console.error;
-					prevGroup = console.group;
-					prevGroupCollapsed = console.groupCollapsed;
-					prevGroupEnd = console.groupEnd;
-					var props = {
-						configurable: true,
-						enumerable: true,
-						value: disabledLog,
-						writable: true
-					};
-					Object.defineProperties(console, {
-						info: props,
-						log: props,
-						warn: props,
-						error: props,
-						group: props,
-						groupCollapsed: props,
-						groupEnd: props
-					});
-				}
-				disabledDepth++;
-			}
-			function reenableLogs() {
-				disabledDepth--;
-				if (disabledDepth === 0) {
-					var props = {
-						configurable: true,
-						enumerable: true,
-						writable: true
-					};
-					Object.defineProperties(console, {
-						log: assign({}, props, { value: prevLog }),
-						info: assign({}, props, { value: prevInfo }),
-						warn: assign({}, props, { value: prevWarn }),
-						error: assign({}, props, { value: prevError }),
-						group: assign({}, props, { value: prevGroup }),
-						groupCollapsed: assign({}, props, { value: prevGroupCollapsed }),
-						groupEnd: assign({}, props, { value: prevGroupEnd })
-					});
-				}
-				if (disabledDepth < 0) error("disabledDepth fell below zero. This is a bug in React. Please file an issue.");
-			}
-			var ReactCurrentDispatcher = ReactSharedInternals.ReactCurrentDispatcher;
-			var prefix;
-			function describeBuiltInComponentFrame(name, source, ownerFn) {
-				if (prefix === void 0) try {
-					throw Error();
-				} catch (x) {
-					var match = x.stack.trim().match(/\n( *(at )?)/);
-					prefix = match && match[1] || "";
-				}
-				return "\n" + prefix + name;
-			}
-			var reentry = false;
-			var componentFrameCache = new (typeof WeakMap === "function" ? WeakMap : Map)();
-			function describeNativeComponentFrame(fn, construct) {
-				if (!fn || reentry) return "";
-				var frame = componentFrameCache.get(fn);
-				if (frame !== void 0) return frame;
-				var control;
-				reentry = true;
-				var previousPrepareStackTrace = Error.prepareStackTrace;
-				Error.prepareStackTrace = void 0;
-				var previousDispatcher = ReactCurrentDispatcher.current;
-				ReactCurrentDispatcher.current = null;
-				disableLogs();
-				try {
-					if (construct) {
-						var Fake = function() {
-							throw Error();
-						};
-						Object.defineProperty(Fake.prototype, "props", { set: function() {
-							throw Error();
-						} });
-						if (typeof Reflect === "object" && Reflect.construct) {
-							try {
-								Reflect.construct(Fake, []);
-							} catch (x) {
-								control = x;
-							}
-							Reflect.construct(fn, [], Fake);
-						} else {
-							try {
-								Fake.call();
-							} catch (x) {
-								control = x;
-							}
-							fn.call(Fake.prototype);
-						}
-					} else {
-						try {
-							throw Error();
-						} catch (x) {
-							control = x;
-						}
-						fn();
-					}
-				} catch (sample) {
-					if (sample && control && typeof sample.stack === "string") {
-						var sampleLines = sample.stack.split("\n");
-						var controlLines = control.stack.split("\n");
-						var s = sampleLines.length - 1;
-						var c = controlLines.length - 1;
-						while (s >= 1 && c >= 0 && sampleLines[s] !== controlLines[c]) c--;
-						for (; s >= 1 && c >= 0; s--, c--) if (sampleLines[s] !== controlLines[c]) {
-							if (s !== 1 || c !== 1) do {
-								s--;
-								c--;
-								if (c < 0 || sampleLines[s] !== controlLines[c]) {
-									var _frame = "\n" + sampleLines[s].replace(" at new ", " at ");
-									if (fn.displayName && _frame.includes("<anonymous>")) _frame = _frame.replace("<anonymous>", fn.displayName);
-									if (typeof fn === "function") componentFrameCache.set(fn, _frame);
-									return _frame;
-								}
-							} while (s >= 1 && c >= 0);
-							break;
-						}
-					}
-				} finally {
-					reentry = false;
-					ReactCurrentDispatcher.current = previousDispatcher;
-					reenableLogs();
-					Error.prepareStackTrace = previousPrepareStackTrace;
-				}
-				var name = fn ? fn.displayName || fn.name : "";
-				var syntheticFrame = name ? describeBuiltInComponentFrame(name) : "";
-				if (typeof fn === "function") componentFrameCache.set(fn, syntheticFrame);
-				return syntheticFrame;
-			}
-			function describeFunctionComponentFrame(fn, source, ownerFn) {
-				return describeNativeComponentFrame(fn, false);
-			}
-			function shouldConstruct(Component) {
-				var prototype = Component.prototype;
-				return !!(prototype && prototype.isReactComponent);
-			}
-			function describeUnknownElementTypeFrameInDEV(type, source, ownerFn) {
-				if (type == null) return "";
-				if (typeof type === "function") return describeNativeComponentFrame(type, shouldConstruct(type));
-				if (typeof type === "string") return describeBuiltInComponentFrame(type);
-				switch (type) {
-					case REACT_SUSPENSE_TYPE: return describeBuiltInComponentFrame("Suspense");
-					case REACT_SUSPENSE_LIST_TYPE: return describeBuiltInComponentFrame("SuspenseList");
-				}
-				if (typeof type === "object") switch (type.$$typeof) {
-					case REACT_FORWARD_REF_TYPE: return describeFunctionComponentFrame(type.render);
-					case REACT_MEMO_TYPE: return describeUnknownElementTypeFrameInDEV(type.type, source, ownerFn);
-					case REACT_LAZY_TYPE:
-						var lazyComponent = type;
-						var payload = lazyComponent._payload;
-						var init = lazyComponent._init;
-						try {
-							return describeUnknownElementTypeFrameInDEV(init(payload), source, ownerFn);
-						} catch (x) {}
-				}
-				return "";
-			}
-			var hasOwnProperty = Object.prototype.hasOwnProperty;
-			var loggedTypeFailures = {};
-			var ReactDebugCurrentFrame = ReactSharedInternals.ReactDebugCurrentFrame;
-			function setCurrentlyValidatingElement(element) {
-				if (element) {
-					var owner = element._owner;
-					var stack = describeUnknownElementTypeFrameInDEV(element.type, element._source, owner ? owner.type : null);
-					ReactDebugCurrentFrame.setExtraStackFrame(stack);
-				} else ReactDebugCurrentFrame.setExtraStackFrame(null);
-			}
-			function checkPropTypes(typeSpecs, values, location, componentName, element) {
-				var has = Function.call.bind(hasOwnProperty);
-				for (var typeSpecName in typeSpecs) if (has(typeSpecs, typeSpecName)) {
-					var error$1 = void 0;
-					try {
-						if (typeof typeSpecs[typeSpecName] !== "function") {
-							var err = Error((componentName || "React class") + ": " + location + " type `" + typeSpecName + "` is invalid; it must be a function, usually from the `prop-types` package, but received `" + typeof typeSpecs[typeSpecName] + "`.This often happens because of typos such as `PropTypes.function` instead of `PropTypes.func`.");
-							err.name = "Invariant Violation";
-							throw err;
-						}
-						error$1 = typeSpecs[typeSpecName](values, typeSpecName, componentName, location, null, "SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED");
-					} catch (ex) {
-						error$1 = ex;
-					}
-					if (error$1 && !(error$1 instanceof Error)) {
-						setCurrentlyValidatingElement(element);
-						error("%s: type specification of %s `%s` is invalid; the type checker function must return `null` or an `Error` but returned a %s. You may have forgotten to pass an argument to the type checker creator (arrayOf, instanceOf, objectOf, oneOf, oneOfType, and shape all require an argument).", componentName || "React class", location, typeSpecName, typeof error$1);
-						setCurrentlyValidatingElement(null);
-					}
-					if (error$1 instanceof Error && !(error$1.message in loggedTypeFailures)) {
-						loggedTypeFailures[error$1.message] = true;
-						setCurrentlyValidatingElement(element);
-						error("Failed %s type: %s", location, error$1.message);
-						setCurrentlyValidatingElement(null);
-					}
-				}
-			}
-			var isArrayImpl = Array.isArray;
-			function isArray(a) {
-				return isArrayImpl(a);
-			}
-			function typeName(value) {
-				return typeof Symbol === "function" && Symbol.toStringTag && value[Symbol.toStringTag] || value.constructor.name || "Object";
-			}
-			function willCoercionThrow(value) {
-				try {
-					testStringCoercion(value);
-					return false;
-				} catch (e) {
-					return true;
-				}
-			}
-			function testStringCoercion(value) {
-				return "" + value;
-			}
-			function checkKeyStringCoercion(value) {
-				if (willCoercionThrow(value)) {
-					error("The provided key is an unsupported type %s. This value must be coerced to a string before before using it here.", typeName(value));
-					return testStringCoercion(value);
-				}
-			}
-			var ReactCurrentOwner = ReactSharedInternals.ReactCurrentOwner;
-			var RESERVED_PROPS = {
-				key: true,
-				ref: true,
-				__self: true,
-				__source: true
-			};
-			var specialPropKeyWarningShown;
-			var specialPropRefWarningShown;
-			var didWarnAboutStringRefs = {};
-			function hasValidRef(config) {
-				if (hasOwnProperty.call(config, "ref")) {
-					var getter = Object.getOwnPropertyDescriptor(config, "ref").get;
-					if (getter && getter.isReactWarning) return false;
-				}
-				return config.ref !== void 0;
-			}
-			function hasValidKey(config) {
-				if (hasOwnProperty.call(config, "key")) {
-					var getter = Object.getOwnPropertyDescriptor(config, "key").get;
-					if (getter && getter.isReactWarning) return false;
-				}
-				return config.key !== void 0;
-			}
-			function warnIfStringRefCannotBeAutoConverted(config, self) {
-				if (typeof config.ref === "string" && ReactCurrentOwner.current && self && ReactCurrentOwner.current.stateNode !== self) {
-					var componentName = getComponentNameFromType(ReactCurrentOwner.current.type);
-					if (!didWarnAboutStringRefs[componentName]) {
-						error("Component \"%s\" contains the string ref \"%s\". Support for string refs will be removed in a future major release. This case cannot be automatically converted to an arrow function. We ask you to manually fix this case by using useRef() or createRef() instead. Learn more about using refs safely here: https://reactjs.org/link/strict-mode-string-ref", getComponentNameFromType(ReactCurrentOwner.current.type), config.ref);
-						didWarnAboutStringRefs[componentName] = true;
-					}
-				}
-			}
-			function defineKeyPropWarningGetter(props, displayName) {
-				var warnAboutAccessingKey = function() {
-					if (!specialPropKeyWarningShown) {
-						specialPropKeyWarningShown = true;
-						error("%s: `key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://reactjs.org/link/special-props)", displayName);
-					}
-				};
-				warnAboutAccessingKey.isReactWarning = true;
-				Object.defineProperty(props, "key", {
-					get: warnAboutAccessingKey,
-					configurable: true
-				});
-			}
-			function defineRefPropWarningGetter(props, displayName) {
-				var warnAboutAccessingRef = function() {
-					if (!specialPropRefWarningShown) {
-						specialPropRefWarningShown = true;
-						error("%s: `ref` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://reactjs.org/link/special-props)", displayName);
-					}
-				};
-				warnAboutAccessingRef.isReactWarning = true;
-				Object.defineProperty(props, "ref", {
-					get: warnAboutAccessingRef,
-					configurable: true
-				});
-			}
-			/**
-			* Factory method to create a new React element. This no longer adheres to
-			* the class pattern, so do not use new to call it. Also, instanceof check
-			* will not work. Instead test $$typeof field against Symbol.for('react.element') to check
-			* if something is a React Element.
-			*
-			* @param {*} type
-			* @param {*} props
-			* @param {*} key
-			* @param {string|object} ref
-			* @param {*} owner
-			* @param {*} self A *temporary* helper to detect places where `this` is
-			* different from the `owner` when React.createElement is called, so that we
-			* can warn. We want to get rid of owner and replace string `ref`s with arrow
-			* functions, and as long as `this` and owner are the same, there will be no
-			* change in behavior.
-			* @param {*} source An annotation object (added by a transpiler or otherwise)
-			* indicating filename, line number, and/or other information.
-			* @internal
-			*/
-			var ReactElement = function(type, key, ref, self, source, owner, props) {
-				var element = {
-					$$typeof: REACT_ELEMENT_TYPE,
-					type,
-					key,
-					ref,
-					props,
-					_owner: owner
-				};
-				element._store = {};
-				Object.defineProperty(element._store, "validated", {
-					configurable: false,
-					enumerable: false,
-					writable: true,
-					value: false
-				});
-				Object.defineProperty(element, "_self", {
-					configurable: false,
-					enumerable: false,
-					writable: false,
-					value: self
-				});
-				Object.defineProperty(element, "_source", {
-					configurable: false,
-					enumerable: false,
-					writable: false,
-					value: source
-				});
-				if (Object.freeze) {
-					Object.freeze(element.props);
-					Object.freeze(element);
-				}
-				return element;
-			};
-			/**
-			* https://github.com/reactjs/rfcs/pull/107
-			* @param {*} type
-			* @param {object} props
-			* @param {string} key
-			*/
-			function jsxDEV(type, config, maybeKey, source, self) {
-				var propName;
-				var props = {};
-				var key = null;
-				var ref = null;
-				if (maybeKey !== void 0) {
-					checkKeyStringCoercion(maybeKey);
-					key = "" + maybeKey;
-				}
-				if (hasValidKey(config)) {
-					checkKeyStringCoercion(config.key);
-					key = "" + config.key;
-				}
-				if (hasValidRef(config)) {
-					ref = config.ref;
-					warnIfStringRefCannotBeAutoConverted(config, self);
-				}
-				for (propName in config) if (hasOwnProperty.call(config, propName) && !RESERVED_PROPS.hasOwnProperty(propName)) props[propName] = config[propName];
-				if (type && type.defaultProps) {
-					var defaultProps = type.defaultProps;
-					for (propName in defaultProps) if (props[propName] === void 0) props[propName] = defaultProps[propName];
-				}
-				if (key || ref) {
-					var displayName = typeof type === "function" ? type.displayName || type.name || "Unknown" : type;
-					if (key) defineKeyPropWarningGetter(props, displayName);
-					if (ref) defineRefPropWarningGetter(props, displayName);
-				}
-				return ReactElement(type, key, ref, self, source, ReactCurrentOwner.current, props);
-			}
-			var ReactCurrentOwner$1 = ReactSharedInternals.ReactCurrentOwner;
-			var ReactDebugCurrentFrame$1 = ReactSharedInternals.ReactDebugCurrentFrame;
-			function setCurrentlyValidatingElement$1(element) {
-				if (element) {
-					var owner = element._owner;
-					var stack = describeUnknownElementTypeFrameInDEV(element.type, element._source, owner ? owner.type : null);
-					ReactDebugCurrentFrame$1.setExtraStackFrame(stack);
-				} else ReactDebugCurrentFrame$1.setExtraStackFrame(null);
-			}
-			var propTypesMisspellWarningShown = false;
-			/**
-			* Verifies the object is a ReactElement.
-			* See https://reactjs.org/docs/react-api.html#isvalidelement
-			* @param {?object} object
-			* @return {boolean} True if `object` is a ReactElement.
-			* @final
-			*/
-			function isValidElement(object) {
-				return typeof object === "object" && object !== null && object.$$typeof === REACT_ELEMENT_TYPE;
-			}
-			function getDeclarationErrorAddendum() {
-				if (ReactCurrentOwner$1.current) {
-					var name = getComponentNameFromType(ReactCurrentOwner$1.current.type);
-					if (name) return "\n\nCheck the render method of `" + name + "`.";
-				}
-				return "";
-			}
-			function getSourceInfoErrorAddendum(source) {
-				if (source !== void 0) {
-					var fileName = source.fileName.replace(/^.*[\\\/]/, "");
-					var lineNumber = source.lineNumber;
-					return "\n\nCheck your code at " + fileName + ":" + lineNumber + ".";
-				}
-				return "";
-			}
-			/**
-			* Warn if there's no key explicitly set on dynamic arrays of children or
-			* object keys are not valid. This allows us to keep track of children between
-			* updates.
-			*/
-			var ownerHasKeyUseWarning = {};
-			function getCurrentComponentErrorInfo(parentType) {
-				var info = getDeclarationErrorAddendum();
-				if (!info) {
-					var parentName = typeof parentType === "string" ? parentType : parentType.displayName || parentType.name;
-					if (parentName) info = "\n\nCheck the top-level render call using <" + parentName + ">.";
-				}
-				return info;
-			}
-			/**
-			* Warn if the element doesn't have an explicit key assigned to it.
-			* This element is in an array. The array could grow and shrink or be
-			* reordered. All children that haven't already been validated are required to
-			* have a "key" property assigned to it. Error statuses are cached so a warning
-			* will only be shown once.
-			*
-			* @internal
-			* @param {ReactElement} element Element that requires a key.
-			* @param {*} parentType element's parent's type.
-			*/
-			function validateExplicitKey(element, parentType) {
-				if (!element._store || element._store.validated || element.key != null) return;
-				element._store.validated = true;
-				var currentComponentErrorInfo = getCurrentComponentErrorInfo(parentType);
-				if (ownerHasKeyUseWarning[currentComponentErrorInfo]) return;
-				ownerHasKeyUseWarning[currentComponentErrorInfo] = true;
-				var childOwner = "";
-				if (element && element._owner && element._owner !== ReactCurrentOwner$1.current) childOwner = " It was passed a child from " + getComponentNameFromType(element._owner.type) + ".";
-				setCurrentlyValidatingElement$1(element);
-				error("Each child in a list should have a unique \"key\" prop.%s%s See https://reactjs.org/link/warning-keys for more information.", currentComponentErrorInfo, childOwner);
-				setCurrentlyValidatingElement$1(null);
-			}
-			/**
-			* Ensure that every element either is passed in a static location, in an
-			* array with an explicit keys property defined, or in an object literal
-			* with valid key property.
-			*
-			* @internal
-			* @param {ReactNode} node Statically passed child of any type.
-			* @param {*} parentType node's parent's type.
-			*/
-			function validateChildKeys(node, parentType) {
-				if (typeof node !== "object") return;
-				if (isArray(node)) for (var i = 0; i < node.length; i++) {
-					var child = node[i];
-					if (isValidElement(child)) validateExplicitKey(child, parentType);
-				}
-				else if (isValidElement(node)) {
-					if (node._store) node._store.validated = true;
-				} else if (node) {
-					var iteratorFn = getIteratorFn(node);
-					if (typeof iteratorFn === "function") {
-						if (iteratorFn !== node.entries) {
-							var iterator = iteratorFn.call(node);
-							var step;
-							while (!(step = iterator.next()).done) if (isValidElement(step.value)) validateExplicitKey(step.value, parentType);
-						}
-					}
-				}
-			}
-			/**
-			* Given an element, validate that its props follow the propTypes definition,
-			* provided by the type.
-			*
-			* @param {ReactElement} element
-			*/
-			function validatePropTypes(element) {
-				var type = element.type;
-				if (type === null || type === void 0 || typeof type === "string") return;
-				var propTypes;
-				if (typeof type === "function") propTypes = type.propTypes;
-				else if (typeof type === "object" && (type.$$typeof === REACT_FORWARD_REF_TYPE || type.$$typeof === REACT_MEMO_TYPE)) propTypes = type.propTypes;
-				else return;
-				if (propTypes) {
-					var name = getComponentNameFromType(type);
-					checkPropTypes(propTypes, element.props, "prop", name, element);
-				} else if (type.PropTypes !== void 0 && !propTypesMisspellWarningShown) {
-					propTypesMisspellWarningShown = true;
-					error("Component %s declared `PropTypes` instead of `propTypes`. Did you misspell the property assignment?", getComponentNameFromType(type) || "Unknown");
-				}
-				if (typeof type.getDefaultProps === "function" && !type.getDefaultProps.isReactClassApproved) error("getDefaultProps is only used on classic React.createClass definitions. Use a static property named `defaultProps` instead.");
-			}
-			/**
-			* Given a fragment, validate that it can only be provided with fragment props
-			* @param {ReactElement} fragment
-			*/
-			function validateFragmentProps(fragment) {
-				var keys = Object.keys(fragment.props);
-				for (var i = 0; i < keys.length; i++) {
-					var key = keys[i];
-					if (key !== "children" && key !== "key") {
-						setCurrentlyValidatingElement$1(fragment);
-						error("Invalid prop `%s` supplied to `React.Fragment`. React.Fragment can only have `key` and `children` props.", key);
-						setCurrentlyValidatingElement$1(null);
-						break;
-					}
-				}
-				if (fragment.ref !== null) {
-					setCurrentlyValidatingElement$1(fragment);
-					error("Invalid attribute `ref` supplied to `React.Fragment`.");
-					setCurrentlyValidatingElement$1(null);
-				}
-			}
-			var didWarnAboutKeySpread = {};
-			function jsxWithValidation(type, props, key, isStaticChildren, source, self) {
-				var validType = isValidElementType(type);
-				if (!validType) {
-					var info = "";
-					if (type === void 0 || typeof type === "object" && type !== null && Object.keys(type).length === 0) info += " You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.";
-					var sourceInfo = getSourceInfoErrorAddendum(source);
-					if (sourceInfo) info += sourceInfo;
-					else info += getDeclarationErrorAddendum();
-					var typeString;
-					if (type === null) typeString = "null";
-					else if (isArray(type)) typeString = "array";
-					else if (type !== void 0 && type.$$typeof === REACT_ELEMENT_TYPE) {
-						typeString = "<" + (getComponentNameFromType(type.type) || "Unknown") + " />";
-						info = " Did you accidentally export a JSX literal instead of a component?";
-					} else typeString = typeof type;
-					error("React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: %s.%s", typeString, info);
-				}
-				var element = jsxDEV(type, props, key, source, self);
-				if (element == null) return element;
-				if (validType) {
-					var children = props.children;
-					if (children !== void 0) if (isStaticChildren) if (isArray(children)) {
-						for (var i = 0; i < children.length; i++) validateChildKeys(children[i], type);
-						if (Object.freeze) Object.freeze(children);
-					} else error("React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.");
-					else validateChildKeys(children, type);
-				}
-				if (hasOwnProperty.call(props, "key")) {
-					var componentName = getComponentNameFromType(type);
-					var keys = Object.keys(props).filter(function(k) {
-						return k !== "key";
-					});
-					var beforeExample = keys.length > 0 ? "{key: someKey, " + keys.join(": ..., ") + ": ...}" : "{key: someKey}";
-					if (!didWarnAboutKeySpread[componentName + beforeExample]) {
-						error("A props object containing a \"key\" prop is being spread into JSX:\n  let props = %s;\n  <%s {...props} />\nReact keys must be passed directly to JSX without using spread:\n  let props = %s;\n  <%s key={someKey} {...props} />", beforeExample, componentName, keys.length > 0 ? "{" + keys.join(": ..., ") + ": ...}" : "{}", componentName);
-						didWarnAboutKeySpread[componentName + beforeExample] = true;
-					}
-				}
-				if (type === REACT_FRAGMENT_TYPE) validateFragmentProps(element);
-				else validatePropTypes(element);
-				return element;
-			}
-			function jsxWithValidationStatic(type, props, key) {
-				return jsxWithValidation(type, props, key, true);
-			}
-			function jsxWithValidationDynamic(type, props, key) {
-				return jsxWithValidation(type, props, key, false);
-			}
-			var jsx = jsxWithValidationDynamic;
-			var jsxs = jsxWithValidationStatic;
-			exports.Fragment = REACT_FRAGMENT_TYPE;
-			exports.jsx = jsx;
-			exports.jsxs = jsxs;
-		})();
-	}));
-	//#endregion
 	//#region src/audio-player/session/AudioSessionContext.tsx
-	var import_jsx_runtime = (/* @__PURE__ */ __commonJSMin(((exports, module) => {
-		if (process.env.NODE_ENV === "production") module.exports = require_react_jsx_runtime_production_min();
-		else module.exports = require_react_jsx_runtime_development();
-	})))();
 	var AudioSessionContext = (0, react.createContext)(null);
 	var EMPTY_PLUGINS$1 = [];
 	/**
@@ -9589,9 +8855,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			pruneAudioCache,
 			setCacheLimit
 		]);
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AudioSessionContext.Provider, {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(AudioSessionContext.Provider, {
 			value,
-			children: [engine.getBackendInfo().active === "html5" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("audio", {
+			children: [engine.getBackendInfo().active === "html5" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("audio", {
 				ref: engine.audioRef,
 				src: engine.currentSrc || void 0
 			}), children]
@@ -9862,7 +9128,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		const progressPct = clampPct(rawProgressPct);
 		const bufferedPct = clampPct(rawBufferedPct);
 		const ariaValueNow = Number.isFinite(displayTime) && displayTime > 0 ? Math.round(displayTime * 10) / 10 : 0;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			ref: trackRef,
 			className: `ap-progress${isSeeking ? " ap-progress--seeking" : ""}`,
 			role: "slider",
@@ -9879,16 +9145,16 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			onPointerCancel: handlePointerUp,
 			onKeyDown: handleKeyDown,
 			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ap-progress__track" }),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { className: "ap-progress__track" }),
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 					className: "ap-progress__buffered",
 					style: { width: `${bufferedPct}%` }
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 					className: "ap-progress__fill",
 					style: { width: `${progressPct}%` }
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 					className: "ap-progress__thumb",
 					style: { left: `${progressPct}%` }
 				})
@@ -10181,11 +9447,11 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		const ariaValueNow = Number.isFinite(currentTime) && currentTime > 0 ? Math.round(currentTime * 10) / 10 : 0;
 		const clampPct = (v) => Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : 0;
 		const bufferedPct = clampPct(duration > 0 ? buffered / duration * 100 : 0);
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			ref: wrapperRef,
 			className: `ap-waveform${isSeeking ? " ap-waveform--seeking" : ""}`,
 			style: { height: `${height}px` },
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: "ap-waveform__surface",
 				role: "slider",
 				tabIndex: showWave ? 0 : -1,
@@ -10197,16 +9463,16 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 				"aria-disabled": disabled,
 				onKeyDown: handleKeyDown,
 				style: { visibility: showWave ? "visible" : "hidden" },
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 					ref: containerRef,
 					className: "ap-waveform__canvas"
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 					className: "ap-waveform__buffered",
 					style: { width: `${bufferedPct}%` }
 				})]
-			}), !showWave && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			}), !showWave && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: "ap-waveform__fallback",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProgressBar, {
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ProgressBar, {
 					currentTime,
 					duration,
 					buffered,
@@ -10345,7 +9611,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	* can be produced, so the timeline always works and never shifts layout.
 	*/
 	function WaveformAdapter({ face, density, currentTime, duration, buffered, disabled, isSeeking, onSeek, onSeekStart, onSeekEnd, peaks, peaksDuration, getDecodedData, url, sourceKey, height, waveColor, progressColor, cursorColor, waveform }) {
-		if (!(waveform ?? faceSupportsWaveform(face))) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProgressBar, {
+		if (!(waveform ?? faceSupportsWaveform(face))) return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ProgressBar, {
 			currentTime,
 			duration,
 			buffered,
@@ -10355,7 +9621,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			onSeekStart,
 			onSeekEnd
 		});
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WaveformProgress, {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(WaveformProgress, {
 			currentTime,
 			duration,
 			buffered,
@@ -10420,14 +9686,14 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	* Returns `null` when there is nothing to render.
 	*/
 	function BackgroundMedia({ media, cssBackground, darkenAmount = 0, className }) {
-		const darken = darkenAmount > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		const darken = darkenAmount > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 			className: "ap-bg-darken",
 			style: { backgroundColor: `rgba(0,0,0,${darkenAmount / 100})` },
 			"aria-hidden": "true"
 		}) : null;
 		if (media && media.kind === "video") {
 			const style = media.fit === "contain" ? { objectFit: "contain" } : void 0;
-			return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("video", {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("video", {
 				className: `ap-bg-video${className ? ` ${className}` : ""}`,
 				src: media.src,
 				poster: media.poster,
@@ -10441,7 +9707,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 				style
 			}), darken] });
 		}
-		if (cssBackground) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		if (cssBackground) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 			className: `ap-bg-image${className ? ` ${className}` : ""}`,
 			style: { backgroundImage: cssBackground },
 			"aria-hidden": "true"
@@ -10458,14 +9724,14 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	* The stable `[data-scrubber-host]` container is the future plugin mount point.
 	*/
 	function ScrubberCanvasHost({ face, density, currentTime, duration, progress, onSeek, activeSurfaceId, children }) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 			className: "ap-scrubber-host",
 			"data-scrubber-host": "",
 			"data-density": density,
 			"data-face": face,
 			"data-surface-id": activeSurfaceId,
 			"data-progress": Math.round(progress * 100),
-			children: children ?? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FallbackScrubber, {
+			children: children ?? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(FallbackScrubber, {
 				currentTime,
 				duration,
 				onSeek
@@ -10479,7 +9745,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	*/
 	function FallbackScrubber({ currentTime, duration, onSeek }) {
 		const [isSeeking, setIsSeeking] = (0, react.useState)(false);
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProgressBar, {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ProgressBar, {
 			currentTime,
 			duration,
 			buffered: 0,
@@ -10556,33 +9822,33 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	}
 	//#endregion
 	//#region src/audio-player/skins/icons.tsx
-	var PlayIcon$1 = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", {
+	var PlayIcon$1 = () => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 		width: "24",
 		height: "24",
 		viewBox: "0 0 24 24",
 		fill: "currentColor",
 		"aria-hidden": "true",
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M8 5v14l12-7z" })
+		children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M8 5v14l12-7z" })
 	});
-	var PauseIcon$1 = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var PauseIcon$1 = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "24",
 		height: "24",
 		viewBox: "0 0 24 24",
 		fill: "currentColor",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
 			x: "6",
 			y: "4",
 			width: "4",
 			height: "16"
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", {
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
 			x: "14",
 			y: "4",
 			width: "4",
 			height: "16"
 		})]
 	});
-	var SpinnerIcon$1 = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var SpinnerIcon$1 = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		className: "ap-spin",
 		width: "24",
 		height: "24",
@@ -10591,37 +9857,37 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		stroke: "currentColor",
 		strokeWidth: "2",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 			cx: "12",
 			cy: "12",
 			r: "10",
 			opacity: "0.25"
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", {
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", {
 			d: "M12 2a10 10 0 0 1 10 10",
 			strokeLinecap: "round"
 		})]
 	});
-	var PrevIcon$1 = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var PrevIcon$1 = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
 		fill: "currentColor",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
 			x: "5",
 			y: "4",
 			width: "2.5",
 			height: "16",
 			rx: "0.5"
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M20 5v14L9 12z" })]
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M20 5v14L9 12z" })]
 	});
-	var NextIcon$1 = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var NextIcon$1 = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
 		fill: "currentColor",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M4 5v14l11-7z" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M4 5v14l11-7z" }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
 			x: "16.5",
 			y: "4",
 			width: "2.5",
@@ -10629,7 +9895,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			rx: "0.5"
 		})]
 	});
-	var ShuffleIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var ShuffleIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -10640,21 +9906,21 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "16 3 21 3 21 8" }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("polyline", { points: "16 3 21 3 21 8" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "4",
 				y1: "20",
 				x2: "21",
 				y2: "3"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "21 16 21 21 16 21" }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("polyline", { points: "21 16 21 21 16 21" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "15",
 				y1: "15",
 				x2: "21",
 				y2: "21"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "4",
 				y1: "4",
 				x2: "9",
@@ -10662,7 +9928,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			})
 		]
 	});
-	var RepeatIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var RepeatIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -10673,13 +9939,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "17 1 21 5 17 9" }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M3 11V9a4 4 0 0 1 4-4h14" }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "7 23 3 19 7 15" }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M21 13v2a4 4 0 0 1-4 4H3" })
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("polyline", { points: "17 1 21 5 17 9" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M3 11V9a4 4 0 0 1 4-4h14" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("polyline", { points: "7 23 3 19 7 15" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M21 13v2a4 4 0 0 1-4 4H3" })
 		]
 	});
-	var RepeatOneIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var RepeatOneIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -10690,11 +9956,11 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "17 1 21 5 17 9" }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M3 11V9a4 4 0 0 1 4-4h14" }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "7 23 3 19 7 15" }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M21 13v2a4 4 0 0 1-4 4H3" }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("text", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("polyline", { points: "17 1 21 5 17 9" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M3 11V9a4 4 0 0 1 4-4h14" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("polyline", { points: "7 23 3 19 7 15" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M21 13v2a4 4 0 0 1-4 4H3" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("text", {
 				x: "12",
 				y: "15",
 				textAnchor: "middle",
@@ -10707,7 +9973,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			})
 		]
 	});
-	var AutomixIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var AutomixIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -10717,9 +9983,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinecap: "round",
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M3 7c6 0 6 10 12 10h6" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M3 17c6 0 6-10 12-10h6" })]
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M3 7c6 0 6 10 12 10h6" }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M3 17c6 0 6-10 12-10h6" })]
 	});
-	var ErrorIcon$1 = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var ErrorIcon$1 = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "18",
 		height: "18",
 		viewBox: "0 0 24 24",
@@ -10728,18 +9994,18 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeWidth: "2",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "12",
 				cy: "12",
 				r: "10"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "12",
 				y1: "8",
 				x2: "12",
 				y2: "12"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "12",
 				y1: "16",
 				x2: "12.01",
@@ -10747,31 +10013,31 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			})
 		]
 	});
-	var DotsIcon$1 = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var DotsIcon$1 = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "18",
 		height: "18",
 		viewBox: "0 0 24 24",
 		fill: "currentColor",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "5",
 				cy: "12",
 				r: "1.8"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "12",
 				cy: "12",
 				r: "1.8"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "19",
 				cy: "12",
 				r: "1.8"
 			})
 		]
 	});
-	var QueueIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var QueueIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -10782,37 +10048,37 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "8",
 				y1: "6",
 				x2: "21",
 				y2: "6"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "8",
 				y1: "12",
 				x2: "21",
 				y2: "12"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "8",
 				y1: "18",
 				x2: "21",
 				y2: "18"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "3",
 				y1: "6",
 				x2: "3.01",
 				y2: "6"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "3",
 				y1: "12",
 				x2: "3.01",
 				y2: "12"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "3",
 				y1: "18",
 				x2: "3.01",
@@ -10820,7 +10086,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			})
 		]
 	});
-	var CanvasIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var CanvasIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -10831,22 +10097,22 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
 				x: "3",
 				y: "4",
 				width: "18",
 				height: "14",
 				rx: "2"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "8.5",
 				cy: "9",
 				r: "1.6"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M21 15l-5-4-7 6" })
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M21 15l-5-4-7 6" })
 		]
 	});
-	var WaveIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", {
+	var WaveIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -10856,9 +10122,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinecap: "round",
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M4 12v0M8 8v8M12 4v16M16 8v8M20 12v0" })
+		children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M4 12v0M8 8v8M12 4v16M16 8v8M20 12v0" })
 	});
-	var ShareIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var ShareIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -10869,28 +10135,28 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "18",
 				cy: "5",
 				r: "3"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "6",
 				cy: "12",
 				r: "3"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "18",
 				cy: "19",
 				r: "3"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "8.59",
 				y1: "13.51",
 				x2: "15.42",
 				y2: "17.49"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "15.41",
 				y1: "6.51",
 				x2: "8.59",
@@ -10898,7 +10164,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			})
 		]
 	});
-	var CheckIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", {
+	var CheckIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -10908,9 +10174,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinecap: "round",
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "20 6 9 17 4 12" })
+		children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("polyline", { points: "20 6 9 17 4 12" })
 	});
-	var LyricsIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var LyricsIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -10921,20 +10187,20 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M9 18V5l12-2v13" }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M9 18V5l12-2v13" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "6",
 				cy: "18",
 				r: "3"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "18",
 				cy: "16",
 				r: "3"
 			})
 		]
 	});
-	var AutoPlayIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", {
+	var AutoPlayIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -10944,13 +10210,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinecap: "round",
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polygon", {
+		children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("polygon", {
 			points: "6 4 20 12 6 20 6 4",
 			fill: "currentColor",
 			stroke: "none"
 		})
 	});
-	var PluginIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var PluginIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -10961,13 +10227,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M12 2v6" }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M8 8h8v4a4 4 0 0 1-8 0z" }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M9 2v4M15 2v4" }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M12 16v6" })
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M12 2v6" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M8 8h8v4a4 4 0 0 1-8 0z" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M9 2v4M15 2v4" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M12 16v6" })
 		]
 	});
-	var ChevronLeftIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", {
+	var ChevronLeftIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 		width: "18",
 		height: "18",
 		viewBox: "0 0 24 24",
@@ -10977,9 +10243,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinecap: "round",
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "15 18 9 12 15 6" })
+		children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("polyline", { points: "15 18 9 12 15 6" })
 	});
-	var CloseIcon$2 = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var CloseIcon$2 = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "18",
 		height: "18",
 		viewBox: "0 0 24 24",
@@ -10988,19 +10254,19 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeWidth: "2",
 		strokeLinecap: "round",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 			x1: "6",
 			y1: "6",
 			x2: "18",
 			y2: "18"
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 			x1: "18",
 			y1: "6",
 			x2: "6",
 			y2: "18"
 		})]
 	});
-	var PlaybackIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var PlaybackIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -11010,17 +10276,17 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinecap: "round",
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 			cx: "12",
 			cy: "12",
 			r: "9"
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", {
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", {
 			d: "M10 9l5 3-5 3z",
 			fill: "currentColor",
 			stroke: "none"
 		})]
 	});
-	var VisualIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var VisualIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -11030,13 +10296,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinecap: "round",
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 			cx: "12",
 			cy: "12",
 			r: "3"
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" })]
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" })]
 	});
-	var AnalyticsIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var AnalyticsIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -11047,19 +10313,19 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "6",
 				y1: "20",
 				x2: "6",
 				y2: "12"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "12",
 				y1: "20",
 				x2: "12",
 				y2: "4"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "18",
 				y1: "20",
 				x2: "18",
@@ -11067,7 +10333,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			})
 		]
 	});
-	var AgentIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var AgentIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -11078,29 +10344,29 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
 				x: "5",
 				y: "8",
 				width: "14",
 				height: "11",
 				rx: "2.5"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M12 4v4" }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M12 4v4" }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "12",
 				cy: "3",
 				r: "1.4",
 				fill: "currentColor",
 				stroke: "none"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "9.5",
 				cy: "13",
 				r: "1.2",
 				fill: "currentColor",
 				stroke: "none"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "14.5",
 				cy: "13",
 				r: "1.2",
@@ -11109,7 +10375,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			})
 		]
 	});
-	var CommentsIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", {
+	var CommentsIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -11119,9 +10385,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinecap: "round",
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9 9 0 0 1-3.8-.8L3 21l1.3-4a8.5 8.5 0 0 1-1-4A8.38 8.38 0 0 1 11.5 4 8.38 8.38 0 0 1 21 11.5z" })
+		children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9 9 0 0 1-3.8-.8L3 21l1.3-4a8.5 8.5 0 0 1-1-4A8.38 8.38 0 0 1 11.5 4 8.38 8.38 0 0 1 21 11.5z" })
 	});
-	var LockIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var LockIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -11131,13 +10397,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinecap: "round",
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
 			x: "5",
 			y: "11",
 			width: "14",
 			height: "9",
 			rx: "2"
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M8 11V8a4 4 0 0 1 8 0v3" })]
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M8 11V8a4 4 0 0 1 8 0v3" })]
 	});
 	//#endregion
 	//#region src/audio-player/surfaces/SurfaceButton.tsx
@@ -11148,7 +10414,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	* by construction. Active state is exposed via `aria-pressed` + a modifier class.
 	*/
 	function SurfaceButton({ active, children, onClick, label, disabled = false, className }) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 			type: "button",
 			className: `ap-surface-btn ap-tap${active ? " ap-surface-btn--active" : ""}${className ? ` ${className}` : ""}`,
 			onClick,
@@ -11327,7 +10593,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		};
 	}
 	/** Default trigger glyph — a small command-wheel mark. */
-	var TriggerIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var TriggerIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -11338,27 +10604,27 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "12",
 				cy: "12",
 				r: "2.2"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "12",
 				cy: "4.5",
 				r: "1.8"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "18.5",
 				cy: "15.5",
 				r: "1.8"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "5.5",
 				cy: "15.5",
 				r: "1.8"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M12 6.7v3M13.8 13.1l2.8 1.6M10.2 13.1l-2.8 1.6" })
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M12 6.7v3M13.8 13.1l2.8 1.6M10.2 13.1l-2.8 1.6" })
 		]
 	});
 	/**
@@ -11465,7 +10731,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			else close();
 		}, [close, path.length]);
 		const inSubmenu = path.length > 0;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 			ref: triggerRef,
 			type: "button",
 			className: `ap-surface-btn ap-tap${open ? " ap-surface-btn--active" : ""}${className ? ` ${className}` : ""}`,
@@ -11473,27 +10739,27 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			"aria-haspopup": "menu",
 			"aria-expanded": open,
 			"aria-label": ariaLabel,
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TriggerIcon, {})
-		}), open && typeof document !== "undefined" && (0, react_dom.createPortal)(/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(TriggerIcon, {})
+		}), open && typeof document !== "undefined" && (0, react_dom.createPortal)(/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "sac",
 			style: themeStyle,
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: "sac__backdrop",
 				onPointerDown: (e) => {
 					if (e.button === 0) close();
 				},
 				"aria-hidden": "true",
 				"data-entered": entered
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: "sac__stage",
 				role: "menu",
 				"aria-label": ariaLabel,
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "sac__arc",
 					"data-open": entered,
 					style: { "--arc-radius": `${arcRadius}px` },
 					children: [
-						inSubmenu && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						inSubmenu && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 							className: "sac__crumb",
 							"aria-hidden": "true",
 							children: trail.join(" › ")
@@ -11503,7 +10769,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 							const interactive = isNodeInteractive(node);
 							const offset = offsets[i];
 							const Icon = node.icon;
-							return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 								type: "button",
 								role: "menuitem",
 								className: `sac__node sac__node--${state}`,
@@ -11517,28 +10783,28 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 								"aria-haspopup": node.children ? "menu" : void 0,
 								tabIndex: interactive ? 0 : -1,
 								children: [
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: "sac__node-icon",
-										children: state === "locked" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LockIcon, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon, {})
+										children: state === "locked" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LockIcon, {}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {})
 									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: "sac__node-label",
 										children: node.label
 									}),
-									state === "coming-soon" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									state === "coming-soon" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: "sac__badge",
 										children: "soon"
 									})
 								]
 							}, node.id);
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 							ref: centerRef,
 							type: "button",
 							className: "sac__center ap-tap",
 							onClick: handleCenter,
 							"aria-label": inSubmenu ? "Back" : "Close menu",
-							children: inSubmenu ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronLeftIcon, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CloseIcon$2, {})
+							children: inSubmenu ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ChevronLeftIcon, {}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CloseIcon$2, {})
 						})
 					]
 				})
@@ -11576,16 +10842,16 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			onOpenFocusedController?.(route);
 		}, [onOpenFocusedController]);
 		if (!showCanvasButton && !showQueueButton) return null;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: `ap-surface-actions${className ? ` ${className}` : ""}`,
 			role: "group",
 			"aria-label": "Player surfaces",
-			children: [showCanvasButton && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SurfaceButton, {
+			children: [showCanvasButton && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SurfaceButton, {
 				active: surface.isCanvasOpen,
 				onClick: surface.toggleCanvas,
 				label: "SEI Canvas",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CanvasIcon, {})
-			}), showQueueButton && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SEICanvasActionMenu, {
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CanvasIcon, {})
+			}), showQueueButton && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SEICanvasActionMenu, {
 				items: menuItems,
 				onActivateCanvas: surface.toggleCanvas,
 				onOpenQueue: onOpenQueue ?? surface.toggleQueue,
@@ -11608,14 +10874,14 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	*/
 	function SEICanvasHost({ open, face, supported, activeSurfaceId, children }) {
 		if (!supported) return null;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 			className: "ap-sei-canvas-host",
 			"data-sei-canvas-host": "",
 			"data-open": open ? "true" : "false",
 			"data-face": face,
 			"data-surface-id": activeSurfaceId,
 			"aria-hidden": open ? void 0 : true,
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: "ap-sei-canvas-host__inner",
 				children
 			})
@@ -11637,30 +10903,30 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			index
 		})).filter(({ index }) => index >= currentIndex);
 		const items = typeof maxItems === "number" ? upcoming.slice(0, maxItems) : upcoming;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: `ap-queue-surface${className ? ` ${className}` : ""}`,
 			role: "group",
 			"aria-label": "Up next",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: "ap-queue-surface__head",
 				children: "Up next"
-			}), items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			}), items.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: "ap-queue-surface__empty",
 				children: "Queue is empty"
-			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+			}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
 				className: "ap-queue-surface__list",
 				children: items.map(({ track, index }) => {
 					const isCurrent = index === currentIndex;
-					return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+					return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 						type: "button",
 						className: `ap-queue-surface__row ap-tap${isCurrent ? " ap-queue-surface__row--current" : ""}`,
 						onClick: () => s.playTrack(index),
 						"aria-current": isCurrent ? "true" : void 0,
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: "ap-queue-surface__title",
 							title: track.title,
 							children: track.title
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: "ap-queue-surface__artist",
 							title: track.artist,
 							children: track.artist
@@ -11740,17 +11006,17 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 				inline: "nearest"
 			});
 		}, [activeIndex, settings.animationMode]);
-		if (lines.length === 0) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		if (lines.length === 0) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "sap-visual-lyric sap-visual-lyric--empty",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-visual-lyric__empty-title",
 				children: "No lyrics"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-visual-lyric__empty-hint",
 				children: "This track has no lyrics to display."
 			})]
 		});
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 			className: "sap-visual-lyric",
 			ref: containerRef,
 			"data-animation": settings.animationMode,
@@ -11762,7 +11028,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			},
 			children: lines.map((line, i) => {
 				const isActive = i === activeIndex;
-				return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 					className: "sap-visual-lyric__line",
 					"data-active": isActive ? "true" : "false",
 					style: isActive ? { color: settings.highlightColor } : void 0,
@@ -11773,9 +11039,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	}
 	/** A labeled field row used by the settings panel. */
 	function Field({ label, children }) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
 			className: "sap-visual-field",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 				className: "sap-visual-field__label",
 				children: label
 			}), children]
@@ -11787,24 +11053,24 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	* `onChange` and update the live SEI Canvas visual.
 	*/
 	function LyricSettingsPanel({ settings, onChange }) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "sap-visual-settings",
 			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Field, {
 					label: "Font family",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("select", {
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("select", {
 						className: "sap-visual-input",
 						value: settings.fontFamily,
 						onChange: (e) => onChange({ fontFamily: e.target.value }),
-						children: FONT_FAMILY_OPTIONS.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+						children: FONT_FAMILY_OPTIONS.map((opt) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
 							value: opt.value,
 							children: opt.label
 						}, opt.label))
 					})
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Field, {
 					label: `Font weight (${settings.fontWeight})`,
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
 						className: "sap-visual-input",
 						type: "range",
 						min: 100,
@@ -11814,9 +11080,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 						onChange: (e) => onChange({ fontWeight: Number(e.target.value) })
 					})
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Field, {
 					label: `Font size (${settings.fontSize}px)`,
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
 						className: "sap-visual-input",
 						type: "range",
 						min: 12,
@@ -11826,9 +11092,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 						onChange: (e) => onChange({ fontSize: Number(e.target.value) })
 					})
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Field, {
 					label: `Line height (${settings.lineHeight.toFixed(1)})`,
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
 						className: "sap-visual-input",
 						type: "range",
 						min: 1,
@@ -11838,22 +11104,22 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 						onChange: (e) => onChange({ lineHeight: Number(e.target.value) })
 					})
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Field, {
 					label: "Highlight color",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
 						className: "sap-visual-input sap-visual-input--color",
 						type: "color",
 						value: settings.highlightColor,
 						onChange: (e) => onChange({ highlightColor: e.target.value })
 					})
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Field, {
 					label: "Animation mode",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("select", {
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("select", {
 						className: "sap-visual-input",
 						value: settings.animationMode,
 						onChange: (e) => onChange({ animationMode: e.target.value }),
-						children: ANIMATION_OPTIONS.map((opt) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+						children: ANIMATION_OPTIONS.map((opt) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
 							value: opt.value,
 							children: opt.label
 						}, opt.value))
@@ -11878,13 +11144,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	* This is a minimal Sea-Workshop-Light format #2 (structured React) export.
 	*/
 	function SampleVisual({ primaryColor = "#7cc4ff", label = "Hello Skin" }) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "container",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
 				className: "title",
 				style: { color: primaryColor },
 				children: label
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ring" })]
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { className: "ring" })]
 		});
 	}
 	//#endregion
@@ -11892,15 +11158,15 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	/** Default settings for this skin. Edit to match your component's API. */
 	var sampleSkinDefaultSettings = {};
 	function SampleSkin({ settings, playback }) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 			className: "sap-visual-sample-skin",
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SampleVisual, {})
+			children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SampleVisual, {})
 		});
 	}
 	function SampleSkinSettingsPanel({ settings, onChange }) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 			className: "sap-visual-settings",
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+			children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
 				style: {
 					opacity: .6,
 					fontSize: 12
@@ -12037,7 +11303,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			getSettings,
 			updateSettings
 		]);
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VisualSlotsContext.Provider, {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(VisualSlotsContext.Provider, {
 			value,
 			children
 		});
@@ -12082,18 +11348,18 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	function SEICanvasRenderer({ currentTime = 0, duration = 0, lyrics } = {}) {
 		const slots = useVisualSlots();
 		const def = getVisualComponent(slots.getActive("seiCanvas"));
-		if (!def) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		if (!def) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "sap-visual-empty",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 				className: "sap-visual-empty__title",
 				children: "SEI Canvas"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 				className: "sap-visual-empty__hint",
 				children: "No visual selected."
 			})]
 		});
 		const { Component } = def;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Component, {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Component, {
 			settings: slots.getSettings(def.id),
 			playback: {
 				currentTime,
@@ -12113,9 +11379,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	function ScrubberCanvasRenderer({ currentTime, duration, onSeek, children }) {
 		const slots = useVisualSlots();
 		const def = getVisualComponent(slots.getActive("scrubberCanvas"));
-		if (!def) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_jsx_runtime.Fragment, { children });
+		if (!def) return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(react_jsx_runtime.Fragment, { children });
 		const { Component } = def;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Component, { settings: {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Component, { settings: {
 			...slots.getSettings(def.id),
 			currentTime,
 			duration,
@@ -12220,33 +11486,33 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		const effective = isMuted ? 0 : volume;
 		const rawPct = effective * 100;
 		const pct = Number.isFinite(rawPct) ? Math.max(0, Math.min(100, rawPct)) : 0;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "ap-volume",
 			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 					type: "button",
 					className: "ap-icon-btn ap-volume__mute",
 					onClick: onToggleMute,
 					disabled,
 					"aria-label": isMuted ? "Unmute" : "Mute",
 					"aria-pressed": isMuted,
-					children: isMuted || effective === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", {
+					children: isMuted || effective === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 						width: "18",
 						height: "18",
 						viewBox: "0 0 24 24",
 						fill: "currentColor",
 						"aria-hidden": "true",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z" })
-					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", {
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z" })
+					}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 						width: "18",
 						height: "18",
 						viewBox: "0 0 24 24",
 						fill: "currentColor",
 						"aria-hidden": "true",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" })
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" })
 					})
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					ref: trackRef,
 					className: "ap-volume__slider",
 					role: "slider",
@@ -12263,18 +11529,18 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 					onPointerCancel: handlePointerUp,
 					onKeyDown: handleKeyDown,
 					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "ap-volume__track" }),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { className: "ap-volume__track" }),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 							className: "ap-volume__fill",
 							style: { width: `${pct}%` }
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 							className: "ap-volume__thumb",
 							style: { left: `${pct}%` }
 						})
 					]
 				}),
-				volumeUnsupported && !disabled && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				volumeUnsupported && !disabled && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 					className: "ap-volume__hint",
 					role: "note",
 					"aria-label": "Use the mute button to silence audio; this browser does not support volume control",
@@ -12948,7 +12214,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		if (!track) return null;
 		const isActive = actualIndex === currentIndex;
 		const isDragging = drag.drag !== null && drag.drag.index === actualIndex;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(QueueRow, {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(QueueRow, {
 			style,
 			track,
 			index: actualIndex,
@@ -13031,46 +12297,46 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			})
 		};
 	}
-	var DragHandleIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var DragHandleIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 16 16",
 		fill: "currentColor",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "5",
 				cy: "4",
 				r: "1.3"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "11",
 				cy: "4",
 				r: "1.3"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "5",
 				cy: "8",
 				r: "1.3"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "11",
 				cy: "8",
 				r: "1.3"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "5",
 				cy: "12",
 				r: "1.3"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "11",
 				cy: "12",
 				r: "1.3"
 			})
 		]
 	});
-	var CloseIcon$1 = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var CloseIcon$1 = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "18",
 		height: "18",
 		viewBox: "0 0 24 24",
@@ -13080,19 +12346,19 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinecap: "round",
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 			x1: "18",
 			y1: "6",
 			x2: "6",
 			y2: "18"
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 			x1: "6",
 			y1: "6",
 			x2: "18",
 			y2: "18"
 		})]
 	});
-	var RemoveIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var RemoveIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "14",
 		height: "14",
 		viewBox: "0 0 24 24",
@@ -13102,12 +12368,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinecap: "round",
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 			x1: "18",
 			y1: "6",
 			x2: "6",
 			y2: "18"
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 			x1: "6",
 			y1: "6",
 			x2: "18",
@@ -13119,7 +12385,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		(0, react.useEffect)(() => {
 			if (isActive && rowRef.current) rowRef.current.focus();
 		}, [isActive]);
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			ref: rowRef,
 			className: `ap-q-row${isActive ? " ap-q-row--active" : ""}${isDragging ? " ap-q-row--dragging" : ""}`,
 			role: "listitem",
@@ -13130,61 +12396,61 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 				...isDragging && dragOffset !== 0 ? { transform: `translateY(${dragOffset}px)` } : {}
 			},
 			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 					className: "ap-q-row__drag",
 					"aria-hidden": "true",
 					style: { touchAction: "none" },
 					onPointerDown: dragHandlers.onPointerDown,
 					onPointerMove: dragHandlers.onPointerMove,
 					onPointerUp: dragHandlers.onPointerUp,
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DragHandleIcon, {})
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(DragHandleIcon, {})
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 					className: "ap-q-row__num",
-					children: isActive && isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+					children: isActive && isPlaying ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 						className: "ap-eq",
 						"aria-hidden": "true",
 						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", {}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", {}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", {})
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("i", {}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("i", {}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("i", {})
 						]
 					}) : index + 1
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-q-row__meta",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: "ap-q-row__title",
 						children: track.title
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: "ap-q-row__artist",
 						children: track.artist
 					})]
 				}),
-				isActive && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				isActive && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 					className: "ap-q-row__badge",
 					children: "Now Playing"
 				}),
-				!isActive && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				!isActive && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 					type: "button",
 					className: "ap-q-row__play-btn ap-tap",
 					onClick: onPlay,
 					"aria-label": `Play ${track.title}`,
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", {
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 						width: "14",
 						height: "14",
 						viewBox: "0 0 24 24",
 						fill: "currentColor",
 						"aria-hidden": "true",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M8 5v14l12-7z" })
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M8 5v14l12-7z" })
 					})
 				}),
-				!isActive && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				!isActive && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 					type: "button",
 					className: "ap-q-row__remove ap-tap",
 					onClick: onRemove,
 					"aria-label": `Remove ${track.title} from queue`,
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RemoveIcon, {})
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(RemoveIcon, {})
 				})
 			]
 		});
@@ -13231,26 +12497,26 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			return () => document.removeEventListener("keydown", handleKey);
 		}, [open, onClose]);
 		if (!open) return null;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "ap-q-overlay",
 			role: "dialog",
 			"aria-modal": "true",
 			"aria-label": "Up next queue",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: "ap-q-backdrop",
 				onClick: onClose,
 				"aria-hidden": "true"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: "ap-q-drawer ap-anim-in",
 				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: "ap-q-header",
 						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
 								className: "ap-q-header__title",
 								children: "Up Next"
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 								className: "ap-q-header__count",
 								children: [
 									queue.length,
@@ -13258,28 +12524,28 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 									queue.length !== 1 ? "s" : ""
 								]
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
 								className: "ap-q-header__close ap-tap",
 								onClick: onClose,
 								"aria-label": "Close queue drawer",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CloseIcon$1, {})
+								children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CloseIcon$1, {})
 							})
 						]
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: "ap-sr-only",
 						role: "status",
 						"aria-live": "polite",
 						"aria-atomic": "true",
 						children: announcement
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: "ap-q-list",
 						role: "list",
 						"aria-label": "Queue tracks",
 						style: { touchAction: "pan-y" },
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AutoSizer, { children: ({ height, width }) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FixedSizeList, {
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(AutoSizer, { children: ({ height, width }) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(FixedSizeList, {
 							outerRef: drag.setContainerRef,
 							height,
 							width,
@@ -13302,13 +12568,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 							children: QueueRowWrapper
 						}) })
 					}),
-					queue.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					queue.length === 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: "ap-q-empty",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: "Queue is empty" })
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: "Queue is empty" })
 					}),
-					queue.length > 0 && upcomingStart >= queue.length && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					queue.length > 0 && upcomingStart >= queue.length && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: "ap-q-empty",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: "No more tracks — the queue ends after this one." })
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: "No more tracks — the queue ends after this one." })
 					})
 				]
 			})]
@@ -13393,12 +12659,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	//#endregion
 	//#region src/audio-player/components/workspace/LibraryPlaylistsWorkspace.tsx
 	function LibraryPlaylistsWorkspace() {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "sap-ctl__workspace-empty",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-ctl__workspace-lead",
 				children: "Playlists coming soon"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-ctl__workspace-sub",
 				children: "Browse, build and reorder playlists from here."
 			})]
@@ -13407,12 +12673,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	//#endregion
 	//#region src/audio-player/components/workspace/LibraryQueueWorkspace.tsx
 	function LibraryQueueWorkspace() {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "sap-ctl__workspace-empty",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-ctl__workspace-lead",
 				children: "Up Next"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-ctl__workspace-sub",
 				children: "An in-workspace view of the play queue is on the way. Use the queue drawer for now."
 			})]
@@ -13422,12 +12688,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	//#region src/audio-player/components/workspace/PluginSettingsWorkspace.tsx
 	function PluginSettingsWorkspace({ pluginId }) {
 		const label = pluginId ? pluginId.charAt(0).toUpperCase() + pluginId.slice(1) : "Plugin";
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "sap-ctl__workspace-empty",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
 				className: "sap-ctl__workspace-lead",
 				children: [label, " settings"]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
 				className: "sap-ctl__workspace-sub",
 				children: [
 					"Configuration for the ",
@@ -13440,12 +12706,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	//#endregion
 	//#region src/audio-player/components/workspace/PlaybackAutomixWorkspace.tsx
 	function PlaybackAutomixWorkspace() {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "sap-ctl__workspace-empty",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-ctl__workspace-lead",
 				children: "Automix settings coming soon"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-ctl__workspace-sub",
 				children: "Crossfade length, beat snapping and transition tuning will live here."
 			})]
@@ -13454,12 +12720,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	//#endregion
 	//#region src/audio-player/components/workspace/AgentQueueDirectorWorkspace.tsx
 	function AgentQueueDirectorWorkspace() {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "sap-ctl__workspace-empty",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-ctl__workspace-lead",
 				children: "AI queue director coming soon"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-ctl__workspace-sub",
 				children: "Let an agent curate and reorder what plays next."
 			})]
@@ -13685,56 +12951,56 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		const handleExportText = (0, react.useCallback)(() => {
 			downloadLog(log.exportText(), `activity-log-${Date.now()}.txt`, "text/plain");
 		}, [log]);
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "al",
 			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "al__toolbar",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: "al__filters",
 						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("select", {
 								className: "al__select",
 								value: filters.status,
 								onChange: handleStatusChange,
 								"aria-label": "Filter by status",
 								children: [
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
 										value: "all",
 										children: "All status"
 									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
 										value: "info",
 										children: "Info"
 									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
 										value: "warn",
 										children: "Warn"
 									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
 										value: "error",
 										children: "Error"
 									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
 										value: "success",
 										children: "Success"
 									})
 								]
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("select", {
 								className: "al__select",
 								value: filters.area,
 								onChange: handleAreaChange,
 								"aria-label": "Filter by area",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
 									value: "all",
 									children: "All areas"
-								}), Object.keys(AREA_LABELS).map((area) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+								}), Object.keys(AREA_LABELS).map((area) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
 									value: area,
 									children: AREA_LABELS[area]
 								}, area))]
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
 								className: "al__search",
 								type: "search",
 								placeholder: "Search messages…",
@@ -13743,18 +13009,18 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 								"aria-label": "Search activity log"
 							})
 						]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: "al__actions",
 						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 								type: "button",
 								className: "al__btn al__btn--copy",
 								onClick: handleCopy,
 								"aria-label": copied ? "Copied" : "Copy log",
 								title: copied ? "Copied!" : "Copy to clipboard",
-								children: [copied ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CheckIcon, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "al__icon-copy" }), copied ? "Copied" : "Copy"]
+								children: [copied ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CheckIcon, {}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { className: "al__icon-copy" }), copied ? "Copied" : "Copy"]
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
 								className: "al__btn al__btn--export",
 								onClick: handleExportText,
@@ -13762,7 +13028,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 								title: "Export as .txt",
 								children: "TXT"
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
 								className: "al__btn al__btn--export",
 								onClick: handleExportJson,
@@ -13770,7 +13036,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 								title: "Export as .json",
 								children: "JSON"
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
 								className: "al__btn al__btn--clear",
 								onClick: handleClear,
@@ -13781,7 +13047,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 						]
 					})]
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "al__badge",
 					children: [
 						filtered.length,
@@ -13792,13 +13058,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 						filters.status !== "all" || filters.area !== "all" || filters.search.trim() ? " (filtered)" : ""
 					]
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 					className: "al__list",
 					ref: listRef,
-					children: filtered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					children: filtered.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: "al__empty",
 						children: log.count === 0 ? "No events recorded yet." : "No events match the current filters."
-					}) : filtered.map((event) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ActivityEventRow, { event }, event.id))
+					}) : filtered.map((event) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ActivityEventRow, { event }, event.id))
 				})
 			]
 		});
@@ -13808,76 +13074,76 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		const time = formatEventTime(event.timestamp);
 		const statusClass = STATUS_CLASS[event.status];
 		const hasDetails = event.details != null || event.error != null || event.message.length > 120;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: `al-event ${statusClass}${expanded ? " al-event--expanded" : ""}`,
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 				type: "button",
 				className: "al-event__summary",
 				onClick: () => setExpanded((v) => !v),
 				"aria-expanded": expanded,
 				"aria-label": expanded ? "Collapse event details" : "Expand event details",
 				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: "al-event__time",
 						children: time
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: `al-event__status al-event__status--${event.status}`,
 						children: event.status
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: "al-event__area",
 						children: AREA_LABELS[event.area]
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: "al-event__msg",
 						children: event.message
 					}),
-					hasDetails && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					hasDetails && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: "al-event__chevron",
 						"aria-hidden": "true",
 						children: expanded ? "▾" : "▸"
 					})
 				]
-			}), expanded && hasDetails && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			}), expanded && hasDetails && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: "al-event__details",
 				children: [
-					event.error && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					event.error && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: "al-event__detail-row",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: "al-event__detail-label",
 							children: "Error"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("code", {
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", {
 							className: "al-event__detail-val al-event__detail-val--error",
 							children: event.error
 						})]
 					}),
-					event.details && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					event.details && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: "al-event__detail-row",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: "al-event__detail-label",
 							children: "Details"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("code", {
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", {
 							className: "al-event__detail-val",
 							children: formatDetails(event.details)
 						})]
 					}),
-					event.message.length > 120 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					event.message.length > 120 && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: "al-event__detail-row",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: "al-event__detail-label",
 							children: "Message"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("code", {
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", {
 							className: "al-event__detail-val",
 							children: event.message
 						})]
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: "al-event__detail-row",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: "al-event__detail-label",
 							children: "ID"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("code", {
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("code", {
 							className: "al-event__detail-val",
 							children: ["#", event.id]
 						})]
@@ -13946,7 +13212,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	* a scroll-ready container and the panel itself.
 	*/
 	function ActivityLogWorkspace() {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ActivityLogPanel, {});
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ActivityLogPanel, {});
 	}
 	//#endregion
 	//#region src/audio-player/visual-slots/ControllerPanelRenderer.tsx
@@ -13959,18 +13225,18 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	function ControllerPanelRenderer({ componentId, lyrics }) {
 		const slots = useVisualSlots();
 		const def = getVisualComponent(componentId);
-		if (!def || !def.SettingsPanel) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		if (!def || !def.SettingsPanel) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "sap-ctl__workspace-empty",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-ctl__workspace-lead",
 				children: def?.name ?? "Settings"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-ctl__workspace-sub",
 				children: "This visual has no configurable settings."
 			})]
 		});
 		const { SettingsPanel } = def;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SettingsPanel, {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SettingsPanel, {
 			settings: slots.getSettings(def.id),
 			onChange: (partial) => slots.updateSettings(def.id, partial),
 			lyrics
@@ -13991,20 +13257,20 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		const { getActive, setActive } = useVisualSlots();
 		const components = getVisualComponentsForSlot(slot);
 		const activeId = getActive(slot);
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "sap-visual-switcher",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 				className: "sap-visual-switcher__label",
 				children: "Choose Visual"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: "sap-visual-switcher__list",
-				children: [components.map((def) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				children: [components.map((def) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 					type: "button",
 					className: `sap-visual-switcher__btn${activeId === def.id ? " sap-visual-switcher__btn--active" : ""}`,
 					onClick: () => setActive(slot, def.id),
 					"aria-pressed": activeId === def.id,
 					children: def.name
-				}, def.id)), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				}, def.id)), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 					type: "button",
 					className: `sap-visual-switcher__btn${activeId === null ? " sap-visual-switcher__btn--active" : ""}`,
 					onClick: () => setActive(slot, null),
@@ -14039,15 +13305,15 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	function VisualCanvasWorkspace({ lyrics }) {
 		const { getActive } = useVisualSlots();
 		const activeId = getActive("seiCanvas");
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(VisualSlotPicker, { slot: "seiCanvas" }), activeId ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ControllerPanelRenderer, {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(VisualSlotPicker, { slot: "seiCanvas" }), activeId ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ControllerPanelRenderer, {
 			componentId: activeId,
 			lyrics
-		}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "sap-ctl__workspace-empty",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-ctl__workspace-lead",
 				children: "No Visual"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-ctl__workspace-sub",
 				children: "Select a visual above to configure it."
 			})]
@@ -14061,38 +13327,38 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	*/
 	function contentForRoute(route, lyrics) {
 		switch (route) {
-			case "library:playlists": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LibraryPlaylistsWorkspace, {});
-			case "library:queue": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LibraryQueueWorkspace, {});
+			case "library:playlists": return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LibraryPlaylistsWorkspace, {});
+			case "library:queue": return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LibraryQueueWorkspace, {});
 			case "plugin-settings:lyrics":
-			case "visual:lyrics": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ControllerPanelRenderer, {
+			case "visual:lyrics": return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ControllerPanelRenderer, {
 				componentId: LYRIC_DISPLAY_ID,
 				lyrics
 			});
-			case "playback:automix": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlaybackAutomixWorkspace, {});
-			case "agent:queue-director": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AgentQueueDirectorWorkspace, {});
-			case "diagnostics:activity-log": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ActivityLogWorkspace, {});
-			case "visual:canvas": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VisualCanvasWorkspace, { lyrics });
+			case "playback:automix": return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PlaybackAutomixWorkspace, {});
+			case "agent:queue-director": return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(AgentQueueDirectorWorkspace, {});
+			case "diagnostics:activity-log": return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ActivityLogWorkspace, {});
+			case "visual:canvas": return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(VisualCanvasWorkspace, { lyrics });
 			default: {
 				const parsed = parseWorkspaceRoute(route);
-				if (parsed?.category === "plugin-settings" && parsed.target) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PluginSettingsWorkspace, { pluginId: parsed.target });
+				if (parsed?.category === "plugin-settings" && parsed.target) return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PluginSettingsWorkspace, { pluginId: parsed.target });
 				return null;
 			}
 		}
 	}
 	function WorkspaceShell({ route, onClose, lyrics }) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("header", {
 			className: "sap-ctl__header",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
 				className: "sap-ctl__title",
 				children: titleForRoute(route)
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 				type: "button",
 				className: "sap-ctl__close ap-tap",
 				onClick: onClose,
 				"aria-label": "Close workspace",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CloseIcon$2, {})
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CloseIcon$2, {})
 			})]
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 			className: "sap-ctl__workspace",
 			"data-route": route,
 			children: contentForRoute(route, lyrics)
@@ -14101,33 +13367,33 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	//#endregion
 	//#region src/audio-player/components/SAPController.tsx
 	function Section({ title, children }) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
 			className: "sap-ctl__section",
 			"aria-label": title,
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
 				className: "sap-ctl__heading",
 				children: title
 			}), children]
 		});
 	}
 	function SwitchRow({ icon, label, on, onToggle }) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 			type: "button",
 			className: "sap-ctl__row ap-tap",
 			role: "switch",
 			"aria-checked": on,
 			onClick: onToggle,
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 				className: "sap-ctl__label",
 				children: [icon, label]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 				className: `sap-ctl__switch${on ? " sap-ctl__switch--on" : ""}`,
 				"aria-hidden": "true",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "sap-ctl__knob" })
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { className: "sap-ctl__knob" })
 			})]
 		});
 	}
-	var CloseIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var CloseIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "18",
 		height: "18",
 		viewBox: "0 0 24 24",
@@ -14136,12 +13402,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeWidth: "2",
 		strokeLinecap: "round",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 			x1: "6",
 			y1: "6",
 			x2: "18",
 			y2: "18"
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 			x1: "18",
 			y1: "6",
 			x2: "6",
@@ -14170,7 +13436,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			return result;
 		}, [lyrics]);
 		const containerRef = (0, react.useRef)(null);
-		if (!parsed.some((l) => l.time >= 0)) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		if (!parsed.some((l) => l.time >= 0)) return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 			className: "sap-ctl__lyrics",
 			children: lyrics
 		});
@@ -14191,10 +13457,10 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 				}
 			}
 		}, [activeIndex]);
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 			className: "sap-ctl__lyrics sap-ctl__lyrics--karaoke",
 			ref: containerRef,
-			children: parsed.map((line, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			children: parsed.map((line, idx) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: `sap-ctl__lyric-line ${idx === activeIndex ? "sap-ctl__lyric-line--active" : ""}`,
 				children: line.text || "\xA0"
 			}, idx))
@@ -14262,14 +13528,14 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			backgroundColor
 		});
 		const isOptions = route === "options";
-		return (0, react_dom.createPortal)(/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return (0, react_dom.createPortal)(/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "sap-ctl",
 			style: themeVars,
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: "sap-ctl__backdrop",
 				onClick: onClose,
 				"aria-hidden": "true"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				ref: sheetRef,
 				className: "sap-ctl__sheet",
 				role: "dialog",
@@ -14277,82 +13543,82 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 				"aria-label": isOptions ? "Player options" : "Player workspace",
 				onKeyDown: handleTrapKeyDown,
 				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: "sap-ctl__grab",
 						"aria-hidden": "true"
 					}),
-					!isOptions && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(WorkspaceShell, {
+					!isOptions && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(WorkspaceShell, {
 						route,
 						onClose,
 						lyrics: info?.lyrics
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: "sap-ctl__divider",
 						role: "separator",
 						"aria-hidden": "true"
 					})] }),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("header", {
 						className: "sap-ctl__header",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
 							className: "sap-ctl__title",
 							children: isOptions ? "Options" : "Options"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 							ref: closeRef,
 							type: "button",
 							className: "sap-ctl__close ap-tap",
 							onClick: onClose,
 							"aria-label": isOptions ? "Close player options" : "Close workspace",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CloseIcon, {})
+							children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CloseIcon, {})
 						})]
 					}),
-					playback && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Section, {
+					playback && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Section, {
 						title: "Playback",
 						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SwitchRow, {
-								icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShuffleIcon, {}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SwitchRow, {
+								icon: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ShuffleIcon, {}),
 								label: "Shuffle",
 								on: playback.shuffle,
 								onToggle: playback.onToggleShuffle
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 								type: "button",
 								className: "sap-ctl__row ap-tap",
 								onClick: playback.onCycleRepeat,
 								"aria-label": `Repeat: ${playback.repeatMode}. Activate to change.`,
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 									className: "sap-ctl__label",
-									children: [playback.repeatMode === "one" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RepeatOneIcon, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RepeatIcon, {}), "Repeat"]
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									children: [playback.repeatMode === "one" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(RepeatOneIcon, {}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(RepeatIcon, {}), "Repeat"]
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 									className: "sap-ctl__value",
 									children: playback.repeatMode
 								})]
 							}),
-							playback.onToggleAutomix && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SwitchRow, {
-								icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AutomixIcon, {}),
+							playback.onToggleAutomix && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SwitchRow, {
+								icon: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(AutomixIcon, {}),
 								label: "Automix",
 								on: playback.automix ?? false,
 								onToggle: playback.onToggleAutomix
 							}),
-							playback.onToggleAutoPlay && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SwitchRow, {
-								icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AutoPlayIcon, {}),
+							playback.onToggleAutoPlay && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SwitchRow, {
+								icon: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(AutoPlayIcon, {}),
 								label: "Auto Play",
 								on: playback.autoPlay ?? false,
 								onToggle: playback.onToggleAutoPlay
 							})
 						]
 					}),
-					queue && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+					queue && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Section, {
 						title: "Queue",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 							type: "button",
 							className: "sap-ctl__row ap-tap",
 							onClick: () => {
 								onClose();
 								queue.onOpenQueue();
 							},
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 								className: "sap-ctl__label",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(QueueIcon, {}), "Up Next"]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(QueueIcon, {}), "Up Next"]
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 								className: "sap-ctl__value",
 								children: [
 									queue.count,
@@ -14362,90 +13628,90 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 							})]
 						})
 					}),
-					info && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Section, {
+					info && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Section, {
 						title: "Info",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: "sap-ctl__meta",
 							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 									className: "sap-ctl__meta-row",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: "sap-ctl__meta-key",
 										children: "Track"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: "sap-ctl__meta-val",
 										children: info.title
 									})]
 								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 									className: "sap-ctl__meta-row",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: "sap-ctl__meta-key",
 										children: "Artist"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: "sap-ctl__meta-val",
 										children: info.artist
 									})]
 								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 									className: "sap-ctl__meta-row",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: "sap-ctl__meta-key",
 										children: "Length"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: "sap-ctl__meta-val",
 										children: Number.isFinite(info.duration) && info.duration > 0 ? formatTime(info.duration) : "–:––"
 									})]
 								})
 							]
-						}), info.lyrics && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+						}), info.lyrics && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 							type: "button",
 							className: "sap-ctl__row ap-tap",
 							onClick: () => setLyricsOpen((v) => !v),
 							"aria-expanded": lyricsOpen,
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 								className: "sap-ctl__label",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LyricsIcon, {}), "Lyrics"]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(LyricsIcon, {}), "Lyrics"]
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 								className: "sap-ctl__value",
 								children: lyricsOpen ? "hide" : "show"
 							})]
-						}), lyricsOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(KaraokeLyrics, { lyrics: info.lyrics })] })]
+						}), lyricsOpen && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(KaraokeLyrics, { lyrics: info.lyrics })] })]
 					}),
-					share && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+					share && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Section, {
 						title: "Share",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 							type: "button",
 							className: "sap-ctl__row ap-tap",
 							onClick: share.onShare,
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 								className: "sap-ctl__label",
-								children: [share.copied ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CheckIcon, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShareIcon, {}), "Share"]
-							}), share.copied && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								children: [share.copied ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CheckIcon, {}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ShareIcon, {}), "Share"]
+							}), share.copied && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 								className: "sap-ctl__value",
 								children: "copied"
 							})]
 						})
 					}),
-					waveform && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+					waveform && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Section, {
 						title: "Visual",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SwitchRow, {
-							icon: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WaveIcon, {}),
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SwitchRow, {
+							icon: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(WaveIcon, {}),
 							label: "Show Waveform",
 							on: waveform.enabled,
 							onToggle: waveform.onToggle
 						})
 					}),
-					pluginNames && pluginNames.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+					pluginNames && pluginNames.length > 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Section, {
 						title: "Plugins",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
 							className: "sap-ctl__plugins",
-							children: pluginNames.map((name) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+							children: pluginNames.map((name) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", {
 								className: "sap-ctl__plugin",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 									className: "sap-ctl__label",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PluginIcon, {}), name]
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(PluginIcon, {}), name]
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 									className: "sap-ctl__value",
 									children: "active"
 								})]
@@ -14542,7 +13808,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			finishPress();
 		};
 		const label = `${seekLabel}; hold for ${skipLabel.toLowerCase()}`;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 			type: "button",
 			className: `${className} ap-hold-skip ap-hold-skip--${direction}${isHolding ? " ap-hold-skip--holding" : ""}`.trim(),
 			style: { "--ap-hold-ms": `${holdMs}ms` },
@@ -14557,16 +13823,16 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			onKeyDown: handleKeyDown,
 			onKeyUp: handleKeyUp,
 			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 					className: "ap-hold-skip__icon",
 					"aria-hidden": "true",
 					children
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 					className: "ap-hold-skip__progress",
 					"aria-hidden": "true"
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 					id: hintId,
 					className: "ap-sr-only",
 					children: [
@@ -14737,13 +14003,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			"--ap-marquee-distance": `${travel}px`,
 			"--ap-marquee-duration": `${Math.max(6, travel / 100 * secondsPer100px)}s`
 		} : void 0;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 			ref: containerRef,
 			className: `ap-marquee${className ? ` ${className}` : ""}`,
 			"data-scroll": scrolling ? "true" : "false",
 			title,
 			style,
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+			children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 				ref: innerRef,
 				className: "ap-marquee__inner",
 				children
@@ -14754,7 +14020,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	//#region src/audio-player/components/TrackMetadata.tsx
 	/** Small "E" badge marking explicit content. Decorative glyph, real label. */
 	function ExplicitBadge({ className }) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 			className: `ap-explicit-badge${className ? ` ${className}` : ""}`,
 			"aria-label": "Explicit content",
 			title: "Explicit content",
@@ -14781,41 +14047,41 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			featured,
 			trailing
 		].filter(Boolean).join(" ");
-		const primary = /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [title, track?.explicit && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExplicitBadge, {})] });
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		const primary = /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [title, track?.explicit && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ExplicitBadge, {})] });
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: `ap-meta ap-meta--${variant}${className ? ` ${className}` : ""}`,
 			"data-variant": variant,
 			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 					className: "ap-meta__primary",
 					dir: "auto",
-					children: enableMarquee ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextMarquee, {
+					children: enableMarquee ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(TextMarquee, {
 						className: "ap-meta__title",
 						title,
 						children: primary
-					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: "ap-meta__title",
 						title,
 						children: primary
 					})
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-meta__secondary",
 					title: secondaryText,
 					dir: "auto",
 					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: "ap-meta__artist",
 							children: artist
 						}),
-						featured && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+						featured && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 							className: "ap-meta__featured",
 							"aria-label": `featuring ${track?.featuredArtists?.join(", ") ?? ""}`,
 							children: [" ", featured]
 						}),
-						trailing && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+						trailing && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 							className: "ap-meta__album",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 								className: "ap-meta__sep",
 								"aria-hidden": "true",
 								children: " · "
@@ -14823,7 +14089,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 						})
 					]
 				}),
-				showTertiary && release && release !== album && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				showTertiary && release && release !== album && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 					className: "ap-meta__tertiary",
 					title: release,
 					children: release
@@ -14946,10 +14212,10 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		const track = queue[index];
 		if (!track) return null;
 		const active = index === currentIndex;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 			style,
 			role: "listitem",
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+			children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 				type: "button",
 				className: "ap-tracklist__item" + (active ? " ap-tracklist__item--active" : ""),
 				onClick: () => onPlay(index),
@@ -14960,27 +14226,27 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 					boxSizing: "border-box"
 				},
 				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: "ap-tracklist__num",
 						children: index + 1
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 						className: "ap-tracklist__meta",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: "ap-tracklist__title",
 							children: track.title
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: "ap-tracklist__artist",
 							children: track.artist
 						})]
 					}),
-					active && isPlaying && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+					active && isPlaying && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 						className: "ap-eq",
 						"aria-hidden": "true",
 						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", {}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", {}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", {})
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("i", {}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("i", {}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("i", {})
 						]
 					})
 				]
@@ -15027,19 +14293,19 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			this.setState({ error: null });
 		};
 		render() {
-			if (this.state.error) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			if (this.state.error) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: "ap-error-boundary",
 				role: "alert",
 				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 						className: "ap-error-boundary__title",
 						children: this.props.fallbackTitle
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 						className: "ap-error-boundary__message",
 						children: this.state.error.message
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 						type: "button",
 						className: "ap-retry-btn",
 						onClick: this.handleReset,
@@ -15083,9 +14349,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	* hidden on touch).
 	*/
 	function AudioPlayer(props) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AudioPlayerErrorBoundary, {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(AudioPlayerErrorBoundary, {
 			fallbackTitle: "Audio player failed to render",
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AudioPlayerInner, { ...props })
+			children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(AudioPlayerInner, { ...props })
 		});
 	}
 	/**
@@ -15119,7 +14385,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			lyrics
 		]);
 		const queueSignature = (0, react.useMemo)(() => trackListSignature(initialQueue), [initialQueue]);
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AudioSessionProvider, {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(AudioSessionProvider, {
 			initialQueue,
 			autoPlay,
 			shuffle,
@@ -15128,7 +14394,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			plugins: externalPlugins,
 			audioBackend,
 			onFallbackSource,
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AudioPlayerBody, {
+			children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(AudioPlayerBody, {
 				...props,
 				isPlaylistMode,
 				resolvedQueue: initialQueue,
@@ -15318,7 +14584,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			s.playTrack,
 			isPlaying
 		]);
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VisualSlotsProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(VisualSlotsProvider, { children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			ref: rootRef,
 			className: `ap-root${className ? ` ${className}` : ""}${pageVisible ? "" : " ap-root--hidden"}`,
 			style: {
@@ -15329,7 +14595,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			"aria-label": "Audio player",
 			onKeyDown: handleRootKeyDown,
 			children: [
-				isPlaylistMode && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(QueueDrawer, {
+				isPlaylistMode && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(QueueDrawer, {
 					queue,
 					currentIndex,
 					isPlaying,
@@ -15339,7 +14605,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 					onReorder: s.moveQueueItem,
 					onRemove: s.removeFromQueue
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SAPController, {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SAPController, {
 					open: controllerOpen,
 					onClose: handleCloseController,
 					route: controllerRoute,
@@ -15381,34 +14647,34 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 					trackColor,
 					backgroundColor
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 					className: "ap-sr-only",
 					role: "status",
 					"aria-live": "polite",
 					"aria-atomic": "true",
 					children: announcement
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(BackgroundMedia, {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(BackgroundMedia, {
 					...resolveMedia({
 						media: backgroundMedia,
 						legacyImage: backgroundImage
 					}),
 					darkenAmount
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-content",
 					children: [
-						!hasAudio && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						!hasAudio && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: "ap-banner ap-banner--error ap-anim-in",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ErrorIcon, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Audio file missing" })]
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ErrorIcon, {}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: "Audio file missing" })]
 						}),
-						autoplayBlocked && hasAudio && !hasError && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						autoplayBlocked && hasAudio && !hasError && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: "ap-banner ap-banner--info ap-banner--col ap-anim-in",
 							role: "status",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 								className: "ap-banner__row",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(InfoIcon, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Autoplay blocked. Tap play to start audio." })]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(InfoIcon, {}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: "Autoplay blocked. Tap play to start audio." })]
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
 								className: "ap-retry-btn",
 								onClick: () => {
@@ -15418,34 +14684,34 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 								children: "Play"
 							})]
 						}),
-						hasError && hasAudio && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						hasError && hasAudio && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: "ap-banner ap-banner--error ap-banner--col ap-anim-in",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 								className: "ap-banner__row",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ErrorIcon, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: errorMessage })]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ErrorIcon, {}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: errorMessage })]
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
 								className: "ap-retry-btn",
 								onClick: s.retry,
 								children: "Retry"
 							})]
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 							className: "ap-top-actions",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 								className: "ap-menu",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 									type: "button",
 									className: "ap-icon-btn ap-tap ap-menu__btn",
 									onClick: handleOpenOptions,
 									"aria-label": "Player options",
 									"aria-haspopup": "dialog",
 									"aria-expanded": controllerOpen,
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DotsIcon, {})
+									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(DotsIcon, {})
 								})
 							})
 						}),
-						isPlaylistMode && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						isPlaylistMode && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: "ap-track-counter",
 							children: [
 								"Track ",
@@ -15457,38 +14723,38 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 								automix ? " · Automix" : ""
 							]
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: "ap-track-info",
 							role: "group",
 							"aria-label": "Track information",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 								className: "ap-track-info__title",
 								style: titleFont,
 								title: formatVersionedTitle(currentTrack.title, currentTrack.versionLabel),
-								children: [formatVersionedTitle(currentTrack.title, currentTrack.versionLabel), currentTrack.explicit && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExplicitBadge, {})]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								children: [formatVersionedTitle(currentTrack.title, currentTrack.versionLabel), currentTrack.explicit && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ExplicitBadge, {})]
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 								className: "ap-track-info__artist",
 								style: artistFont,
 								title: formatSecondaryLine(currentTrack),
 								children: formatSecondaryLine(currentTrack)
 							})]
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: "ap-progress-group",
 							role: "group",
 							"aria-label": "Playback progress",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrubberCanvasHost, {
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ScrubberCanvasHost, {
 								face: "portable",
 								density: getScrubberDensity("portable"),
 								currentTime,
 								duration,
 								progress: duration > 0 ? currentTime / duration : 0,
 								onSeek: s.seek,
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrubberCanvasRenderer, {
+								children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ScrubberCanvasRenderer, {
 									currentTime,
 									duration,
 									onSeek: s.seek,
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WaveformAdapter, {
+									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(WaveformAdapter, {
 										face: "portable",
 										density: getScrubberDensity("portable"),
 										waveform: effectiveWaveform,
@@ -15511,18 +14777,18 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 										cursorColor: accentColor
 									})
 								})
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 								className: "ap-times",
 								"aria-hidden": "true",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: formatTime(currentTime) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: formatTime(duration) })]
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: formatTime(currentTime) }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: formatTime(duration) })]
 							})]
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: "ap-transport",
 							role: "group",
 							"aria-label": "Playback controls",
 							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(HoldSkipButton, {
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(HoldSkipButton, {
 									direction: "previous",
 									className: "ap-btn ap-btn--ghost ap-tap",
 									disabled: !hasAudio,
@@ -15531,17 +14797,17 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 									skipLabel: "Previous track",
 									onSeek: () => s.seekBy(-10),
 									onSkip: s.previous,
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PrevIcon, {})
+									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PrevIcon, {})
 								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 									type: "button",
 									className: `ap-btn ap-btn--play ap-tap${isPlaying ? " ap-btn--play-active" : ""}`,
 									onClick: s.toggle,
 									disabled: !hasAudio,
 									"aria-label": !hasAudio ? "Audio file missing" : showPlaySpinner ? "Buffering audio" : isPlaying ? "Pause" : "Play",
-									children: showPlaySpinner ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SpinnerIcon, {}) : isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PauseIcon, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlayIcon, {})
+									children: showPlaySpinner ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SpinnerIcon, {}) : isPlaying ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PauseIcon, {}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PlayIcon, {})
 								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(HoldSkipButton, {
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(HoldSkipButton, {
 									direction: "next",
 									className: "ap-btn ap-btn--ghost ap-tap",
 									disabled: !hasAudio,
@@ -15550,11 +14816,11 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 									skipLabel: "Next track",
 									onSeek: () => s.seekBy(10),
 									onSkip: s.next,
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(NextIcon, {})
+									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(NextIcon, {})
 								})
 							]
 						}),
-						showVolume && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VolumeControl, {
+						showVolume && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(VolumeControl, {
 							volume,
 							isMuted,
 							disabled: !hasAudio,
@@ -15562,35 +14828,35 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 							onVolumeChange: s.setVolume,
 							onToggleMute: s.toggleMute
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SEICanvasHost, {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SEICanvasHost, {
 							open: surface.isCanvasOpen || surface.isQueueOpen,
 							face: "portable",
 							supported: surface.canvasSupported,
 							activeSurfaceId: surface.mode === "default" ? void 0 : surface.mode,
-							children: surface.isQueueOpen ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(QueueSurface, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SEICanvasRenderer, {
+							children: surface.isQueueOpen ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(QueueSurface, {}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SEICanvasRenderer, {
 								currentTime,
 								duration,
 								lyrics: currentTrack?.lyrics
 							})
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlayerSurfaceButtons, {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)(PlayerSurfaceButtons, {
 							surface,
 							onOpenQueue: () => setQueueOpen(true),
 							onOpenFocusedController: handleOpenFocusedController
 						}),
-						currentTrack.purchaseUrl && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("a", {
+						currentTrack.purchaseUrl && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("a", {
 							className: "ap-wide-btn ap-wide-btn--solid ap-tap",
 							href: currentTrack.purchaseUrl,
 							target: "_blank",
 							rel: "noopener noreferrer",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(HeartIcon, {}), "Support Artist"]
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(HeartIcon, {}), "Support Artist"]
 						}),
-						isPlaylistMode && showTracklist && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						isPlaylistMode && showTracklist && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 							className: "ap-tracklist ap-anim-in",
 							role: "list",
 							"aria-label": "Playlist tracks",
 							style: { overflowY: "hidden" },
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FixedSizeList, {
+							children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(FixedSizeList, {
 								height: Math.min(276, queue.length * 52),
 								itemCount: queue.length,
 								itemSize: 52,
@@ -15604,7 +14870,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			]
 		}) });
 	}
-	var ErrorIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var ErrorIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "20",
 		height: "20",
 		viewBox: "0 0 24 24",
@@ -15613,18 +14879,18 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeWidth: "2",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "12",
 				cy: "12",
 				r: "10"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "12",
 				y1: "8",
 				x2: "12",
 				y2: "12"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "12",
 				y1: "16",
 				x2: "12.01",
@@ -15632,7 +14898,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			})
 		]
 	});
-	var InfoIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var InfoIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "20",
 		height: "20",
 		viewBox: "0 0 24 24",
@@ -15641,18 +14907,18 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeWidth: "2",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "12",
 				cy: "12",
 				r: "10"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "12",
 				y1: "16",
 				x2: "12",
 				y2: "12"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("line", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("line", {
 				x1: "12",
 				y1: "8",
 				x2: "12.01",
@@ -15660,33 +14926,33 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			})
 		]
 	});
-	var PlayIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", {
+	var PlayIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 		width: "24",
 		height: "24",
 		viewBox: "0 0 24 24",
 		fill: "currentColor",
 		"aria-hidden": "true",
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M8 5v14l12-7z" })
+		children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M8 5v14l12-7z" })
 	});
-	var PauseIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var PauseIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "24",
 		height: "24",
 		viewBox: "0 0 24 24",
 		fill: "currentColor",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
 			x: "6",
 			y: "4",
 			width: "4",
 			height: "16"
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", {
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
 			x: "14",
 			y: "4",
 			width: "4",
 			height: "16"
 		})]
 	});
-	var SpinnerIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var SpinnerIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		className: "ap-spin",
 		width: "24",
 		height: "24",
@@ -15695,37 +14961,37 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		stroke: "currentColor",
 		strokeWidth: "2",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 			cx: "12",
 			cy: "12",
 			r: "10",
 			opacity: "0.25"
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", {
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", {
 			d: "M12 2a10 10 0 0 1 10 10",
 			strokeLinecap: "round"
 		})]
 	});
-	var PrevIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var PrevIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "14",
 		height: "14",
 		viewBox: "0 0 24 24",
 		fill: "currentColor",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
 			x: "5",
 			y: "4",
 			width: "2.5",
 			height: "16",
 			rx: "0.5"
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M20 5v14L9 12z" })]
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M20 5v14L9 12z" })]
 	});
-	var NextIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var NextIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "14",
 		height: "14",
 		viewBox: "0 0 24 24",
 		fill: "currentColor",
 		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M4 5v14l11-7z" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("rect", {
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M4 5v14l11-7z" }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
 			x: "16.5",
 			y: "4",
 			width: "2.5",
@@ -15733,7 +14999,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			rx: "0.5"
 		})]
 	});
-	var HeartIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", {
+	var HeartIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 		width: "16",
 		height: "16",
 		viewBox: "0 0 24 24",
@@ -15743,26 +15009,26 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		strokeLinecap: "round",
 		strokeLinejoin: "round",
 		"aria-hidden": "true",
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" })
+		children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" })
 	});
-	var DotsIcon = () => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", {
+	var DotsIcon = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		width: "18",
 		height: "18",
 		viewBox: "0 0 24 24",
 		fill: "currentColor",
 		"aria-hidden": "true",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "5",
 				cy: "12",
 				r: "1.8"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "12",
 				cy: "12",
 				r: "1.8"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", {
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
 				cx: "19",
 				cy: "12",
 				r: "1.8"
@@ -17297,15 +16563,15 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	//#endregion
 	//#region src/audio-player/components/workspace/VisualLyricsWorkspace.tsx
 	function VisualLyricsWorkspace({ lyrics }) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "sap-ctl__workspace-empty",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-ctl__workspace-lead",
 				children: "Lyrics"
-			}), lyrics ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			}), lyrics ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: "sap-ctl__lyrics",
 				children: lyrics
-			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "sap-ctl__workspace-sub",
 				children: "Lyrics display and sync settings will appear here."
 			})]
@@ -17585,37 +16851,37 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		});
 		const release = releaseTitle?.trim();
 		const useMarquee = marquee && !collapsed;
-		const titleContent = /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [fullTitle, explicit && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExplicitBadge, {})] });
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		const titleContent = /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [fullTitle, explicit && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ExplicitBadge, {})] });
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: `ap-hero${className ? ` ${className}` : ""}`,
 			"data-collapsed": collapsed ? "true" : "false",
 			"data-face": face,
 			role: "group",
 			"aria-label": "Track information",
-			children: [art && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			children: [art && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: "ap-hero__art",
 				children: art
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: "ap-hero__text",
 				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: "ap-hero__title",
 						title: fullTitle,
 						dir: "auto",
 						style: titleFont,
-						children: useMarquee ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextMarquee, {
+						children: useMarquee ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(TextMarquee, {
 							className: "ap-hero__marquee",
 							children: titleContent
 						}) : titleContent
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: "ap-hero__artist",
 						title: secondary,
 						dir: "auto",
 						style: artistFont,
 						children: secondary
 					}),
-					!collapsed && release && release !== album?.trim() && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					!collapsed && release && release !== album?.trim() && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: "ap-hero__release",
 						title: release,
 						dir: "auto",
@@ -17658,7 +16924,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			media: artMedia,
 			legacyCss: art
 		});
-		const heroArtNode = heroArt.media?.kind === "video" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("video", {
+		const heroArtNode = heroArt.media?.kind === "video" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("video", {
 			className: "ap-fc__hero-art",
 			src: heroArt.media.src,
 			poster: heroArt.media.poster,
@@ -17668,7 +16934,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			loop: true,
 			playsInline: true,
 			"aria-hidden": "true"
-		}) : heroArt.cssBackground ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		}) : heroArt.cssBackground ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 			className: "ap-fc__hero-art",
 			style: { backgroundImage: heroArt.cssBackground },
 			"aria-hidden": "true"
@@ -17705,7 +16971,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			setControllerRoute("options");
 			setControllerOpen(true);
 		}, []);
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VisualSlotsProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(VisualSlotsProvider, { children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: `ap-fc ap-glass-surface${className ? ` ${className}` : ""}`,
 			style: {
 				...themeVars,
@@ -17715,13 +16981,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			role: "region",
 			"aria-label": "Now playing",
 			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(BackgroundMedia, {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(BackgroundMedia, {
 					media: backdrop.media,
 					cssBackground: backdrop.cssBackground,
 					darkenAmount,
 					className: "ap-fc__bg"
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(QueueDrawer, {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(QueueDrawer, {
 					queue,
 					currentIndex,
 					isPlaying,
@@ -17731,7 +16997,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 					onReorder: s.moveQueueItem,
 					onRemove: s.removeFromQueue
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SAPController, {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SAPController, {
 					open: controllerOpen,
 					onClose: handleCloseController,
 					route: controllerRoute,
@@ -17759,30 +17025,30 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 					} : void 0,
 					...theme
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 					className: "ap-fc__menu",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 						type: "button",
 						className: "ap-icon-btn ap-tap ap-menu__btn",
 						onClick: handleOpenOptions,
 						"aria-label": "Player options",
 						"aria-haspopup": "dialog",
 						"aria-expanded": controllerOpen,
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DotsIcon$1, {})
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(DotsIcon$1, {})
 					})
 				}),
-				isEmpty && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				isEmpty && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-banner ap-banner--info ap-anim-in",
 					role: "status",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ErrorIcon$1, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Queue is empty" })]
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ErrorIcon$1, {}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: "Queue is empty" })]
 				}),
-				autoplayBlocked && hasAudio && !hasError && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				autoplayBlocked && hasAudio && !hasError && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-banner ap-banner--info ap-banner--col ap-anim-in",
 					role: "status",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: "ap-banner__row",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ErrorIcon$1, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Autoplay blocked. Tap play to start audio." })]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ErrorIcon$1, {}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: "Autoplay blocked. Tap play to start audio." })]
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 						type: "button",
 						className: "ap-retry-btn",
 						onClick: () => {
@@ -17792,19 +17058,19 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 						children: "Play"
 					})]
 				}),
-				hasError && hasAudio && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				hasError && hasAudio && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-banner ap-banner--error ap-banner--col ap-anim-in",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: "ap-banner__row",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ErrorIcon$1, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: errorMessage })]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ErrorIcon$1, {}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: errorMessage })]
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 						type: "button",
 						className: "ap-retry-btn",
 						onClick: s.retry,
 						children: "Retry"
 					})]
 				}),
-				!isEmpty && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				!isEmpty && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-fc__counter",
 					children: [
 						"Track ",
@@ -17816,10 +17082,10 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 						automix ? " · Automix" : ""
 					]
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-fc__stage",
 					"data-surface-open": surface.mode !== "default",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlayerHero, {
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(PlayerHero, {
 						face: "fullCard",
 						collapsed: surface.isHeroCollapsed,
 						title: currentTrack?.title ?? "Nothing playing",
@@ -17834,37 +17100,37 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 						marquee: true,
 						titleFont,
 						artistFont
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SEICanvasHost, {
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SEICanvasHost, {
 						open: surface.isCanvasOpen || surface.isQueueOpen,
 						face: "fullCard",
 						supported: surface.canvasSupported,
 						activeSurfaceId: surface.mode === "default" ? void 0 : surface.mode,
-						children: surface.isQueueOpen ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(QueueSurface, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SEICanvasRenderer, {
+						children: surface.isQueueOpen ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(QueueSurface, {}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SEICanvasRenderer, {
 							currentTime,
 							duration,
 							lyrics: currentTrack?.lyrics
 						})
 					})]
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-fc__control-dock",
 					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrubberCanvasHost, {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ScrubberCanvasHost, {
 							face: "fullCard",
 							density: getScrubberDensity("fullCard"),
 							currentTime,
 							duration,
 							progress: duration > 0 ? currentTime / duration : 0,
 							onSeek: s.seek,
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrubberCanvasRenderer, {
+							children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ScrubberCanvasRenderer, {
 								currentTime,
 								duration,
 								onSeek: s.seek,
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 									className: "ap-progress-group",
 									role: "group",
 									"aria-label": "Playback progress",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(WaveformAdapter, {
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(WaveformAdapter, {
 										face: "fullCard",
 										density: getScrubberDensity("fullCard"),
 										currentTime,
@@ -17880,20 +17146,20 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 										getDecodedData: s.getDecodedData,
 										url: s.getBackendInfo().active === "html5" ? s.currentSrc : void 0,
 										sourceKey: currentTrack ? trackKey(currentTrack) : void 0
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 										className: "ap-times",
 										"aria-hidden": "true",
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: formatTime(currentTime) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: formatTime(duration) })]
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: formatTime(currentTime) }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: formatTime(duration) })]
 									})]
 								})
 							})
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: "ap-transport",
 							role: "group",
 							"aria-label": "Playback controls",
 							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(HoldSkipButton, {
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(HoldSkipButton, {
 									direction: "previous",
 									className: "ap-btn ap-btn--ghost ap-tap",
 									disabled: !hasAudio,
@@ -17902,17 +17168,17 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 									skipLabel: "Previous track",
 									onSeek: () => s.seekBy(-10),
 									onSkip: s.previous,
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PrevIcon$1, {})
+									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PrevIcon$1, {})
 								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 									type: "button",
 									className: `ap-btn ap-btn--play ap-tap${isPlaying ? " ap-btn--play-active" : ""}`,
 									onClick: s.toggle,
 									disabled: !hasAudio,
 									"aria-label": showPlaySpinner ? "Buffering audio" : isPlaying ? "Pause" : "Play",
-									children: showPlaySpinner ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SpinnerIcon$1, {}) : isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PauseIcon$1, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlayIcon$1, {})
+									children: showPlaySpinner ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SpinnerIcon$1, {}) : isPlaying ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PauseIcon$1, {}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PlayIcon$1, {})
 								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(HoldSkipButton, {
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(HoldSkipButton, {
 									direction: "next",
 									className: "ap-btn ap-btn--ghost ap-tap",
 									disabled: !hasAudio,
@@ -17921,11 +17187,11 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 									skipLabel: "Next track",
 									onSeek: () => s.seekBy(10),
 									onSkip: s.next,
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(NextIcon$1, {})
+									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(NextIcon$1, {})
 								})
 							]
 						}),
-						showVolume && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VolumeControl, {
+						showVolume && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(VolumeControl, {
 							volume,
 							isMuted,
 							disabled: !hasAudio,
@@ -17933,7 +17199,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 							onVolumeChange: s.setVolume,
 							onToggleMute: s.toggleMute
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlayerSurfaceButtons, {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)(PlayerSurfaceButtons, {
 							surface,
 							onOpenQueue: handleOpenQueue,
 							onOpenFocusedController: handleOpenFocusedController
@@ -17975,7 +17241,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			indexLeaves(actions, map);
 			return map;
 		}, [actions]);
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SEICanvasActionMenu, {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SEICanvasActionMenu, {
 			items,
 			onSelect: (node) => leaves.get(node.id)?.onSelect?.(node.id),
 			ariaLabel,
@@ -18113,7 +17379,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			if (isActive) s.toggle();
 			else s.playNow(track);
 		};
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: `ap-vr${isActive ? " ap-vr--active" : ""}${className ? ` ${className}` : ""}`,
 			style: {
 				...buildThemeVars(theme),
@@ -18123,55 +17389,55 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			"data-vault-category": track.vaultCategory,
 			"aria-current": isActive ? "true" : void 0,
 			children: [
-				category && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				category && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 					className: "ap-vr__chip ap-vr__chip--lead",
 					title: category.label,
 					children: category.label
 				}),
-				number !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				number !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 					className: "ap-vr__num",
 					children: number
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 					type: "button",
 					className: "ap-btn ap-btn--play ap-vr__play ap-tap",
 					onClick: handleToggle,
 					"aria-label": isBufferingThis ? "Buffering audio" : isPlayingThis ? `Pause ${track.title}` : `Play ${track.title}`,
-					children: isBufferingThis ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SpinnerIcon$1, {}) : isPlayingThis ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PauseIcon$1, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlayIcon$1, {})
+					children: isBufferingThis ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SpinnerIcon$1, {}) : isPlayingThis ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PauseIcon$1, {}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PlayIcon$1, {})
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-vr__meta",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 						className: "ap-vr__title",
 						title: formatVersionedTitle(track.title, track.versionLabel),
-						children: [formatVersionedTitle(track.title, track.versionLabel), track.explicit && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExplicitBadge, {})]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+						children: [formatVersionedTitle(track.title, track.versionLabel), track.explicit && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ExplicitBadge, {})]
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 						className: "ap-vr__artist",
 						title: formatSecondaryLine(track),
-						children: [category && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						children: [category && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: "ap-vr__chip ap-vr__chip--inline",
 							children: category.label
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: "ap-vr__artist-text",
 							children: formatSecondaryLine(track)
 						})]
 					})]
 				}),
-				isActive && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				isActive && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 					className: "ap-vr__time",
 					"aria-hidden": "true",
 					children: formatTime(s.currentTime)
 				}),
-				isPlayingThis && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+				isPlayingThis && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 					className: "ap-eq",
 					"aria-hidden": "true",
 					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", {}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", {}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", {})
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("i", {}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("i", {}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("i", {})
 					]
 				}),
-				showAction && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArcActionButton, {
+				showAction && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ArcActionButton, {
 					actions: resolvedActions,
 					ariaLabel: `Actions for ${track.title}`,
 					className: "ap-vr__action"
@@ -18208,7 +17474,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		if (s.queue.length === 0 || !s.currentTrack) return null;
 		const { currentTrack, isPlaying, isBuffering, shuffle, repeatMode, automix } = s;
 		const showPlaySpinner = isBuffering;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: `ap-sb${fixed ? " ap-sb--fixed" : ""}${className ? ` ${className}` : ""}`,
 			style: {
 				...buildThemeVars(theme),
@@ -18217,7 +17483,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			role: "region",
 			"aria-label": "Playback bar",
 			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(QueueDrawer, {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(QueueDrawer, {
 					queue: s.queue,
 					currentIndex: s.currentIndex,
 					isPlaying: s.isPlaying,
@@ -18227,7 +17493,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 					onReorder: s.moveQueueItem,
 					onRemove: s.removeFromQueue
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SAPController, {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SAPController, {
 					open: controllerOpen,
 					onClose: () => setControllerOpen(false),
 					route: "options",
@@ -18255,27 +17521,27 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 					},
 					...theme
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-sb__inner",
 					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: "ap-sb__meta",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 								className: "ap-sb__title",
 								title: formatVersionedTitle(currentTrack.title, currentTrack.versionLabel),
-								children: [formatVersionedTitle(currentTrack.title, currentTrack.versionLabel), currentTrack.explicit && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExplicitBadge, {})]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								children: [formatVersionedTitle(currentTrack.title, currentTrack.versionLabel), currentTrack.explicit && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ExplicitBadge, {})]
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 								className: "ap-sb__artist",
 								title: formatSecondaryLine(currentTrack),
 								children: formatSecondaryLine(currentTrack)
 							})]
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: "ap-sb__center",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 								className: "ap-sb__controls",
 								children: [
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(HoldSkipButton, {
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(HoldSkipButton, {
 										direction: "previous",
 										className: "ap-btn ap-btn--ghost ap-btn--sm ap-tap",
 										disabled: !s.hasAudio,
@@ -18284,17 +17550,17 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 										skipLabel: "Previous track",
 										onSeek: () => s.seekBy(-10),
 										onSkip: s.previous,
-										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PrevIcon$1, {})
+										children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PrevIcon$1, {})
 									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 										type: "button",
 										className: `ap-btn ap-btn--play ap-sb__play ap-tap${isPlaying ? " ap-btn--play-active" : ""}`,
 										onClick: s.toggle,
 										disabled: !s.hasAudio,
 										"aria-label": showPlaySpinner ? "Buffering audio" : isPlaying ? "Pause" : "Play",
-										children: showPlaySpinner ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SpinnerIcon$1, {}) : isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PauseIcon$1, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlayIcon$1, {})
+										children: showPlaySpinner ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SpinnerIcon$1, {}) : isPlaying ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PauseIcon$1, {}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PlayIcon$1, {})
 									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(HoldSkipButton, {
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(HoldSkipButton, {
 										direction: "next",
 										className: "ap-btn ap-btn--ghost ap-btn--sm ap-tap",
 										disabled: !s.hasAudio,
@@ -18303,34 +17569,34 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 										skipLabel: "Next track",
 										onSeek: () => s.seekBy(10),
 										onSkip: s.next,
-										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(NextIcon$1, {})
+										children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(NextIcon$1, {})
 									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 										type: "button",
 										className: "ap-icon-btn ap-tap",
 										onClick: () => setControllerOpen(true),
 										"aria-label": "Player options",
 										"aria-haspopup": "dialog",
 										"aria-expanded": controllerOpen,
-										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DotsIcon$1, {})
+										children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(DotsIcon$1, {})
 									})
 								]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 								className: "ap-sb__scrub",
 								children: [
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: "ap-sb__t",
 										"aria-hidden": "true",
 										children: formatTime(s.currentTime)
 									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrubberCanvasHost, {
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ScrubberCanvasHost, {
 										face: "stickyBottom",
 										density: getScrubberDensity("stickyBottom"),
 										currentTime: s.currentTime,
 										duration: s.duration,
 										progress: s.duration > 0 ? s.currentTime / s.duration : 0,
 										onSeek: s.seek,
-										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WaveformAdapter, {
+										children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(WaveformAdapter, {
 											face: "stickyBottom",
 											density: getScrubberDensity("stickyBottom"),
 											currentTime: s.currentTime,
@@ -18343,7 +17609,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 											onSeekEnd: () => s.setSeeking(false)
 										})
 									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: "ap-sb__t",
 										"aria-hidden": "true",
 										children: formatTime(s.duration)
@@ -18351,9 +17617,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 								]
 							})]
 						}),
-						showVolume && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						showVolume && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 							className: "ap-sb__volume",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VolumeControl, {
+							children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(VolumeControl, {
 								volume: s.volume,
 								isMuted: s.isMuted,
 								disabled: !s.hasAudio,
@@ -18394,47 +17660,47 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		const { currentTrack, isPlaying, isBuffering, hasAudio } = s;
 		const msTitle = currentTrack ? formatVersionedTitle(currentTrack.title, currentTrack.versionLabel) : "Nothing playing";
 		const msSecondary = currentTrack ? formatSecondaryLine(currentTrack) : "—";
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: `ap-ms-shell${className ? ` ${className}` : ""}`,
 			style: {
 				...buildThemeVars(theme),
 				...style
 			},
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: "ap-ms ap-glass-surface ap-glass-surface--compact",
 				role: "region",
 				"aria-label": "Mini player",
 				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: `ap-ms__art${isPlaying ? " ap-ms__art--playing" : ""}`,
 						style: blockArt.cssBackground ? { backgroundImage: blockArt.cssBackground } : void 0,
 						"aria-hidden": "true",
-						children: blockArt.media && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BackgroundMedia, {
+						children: blockArt.media && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(BackgroundMedia, {
 							media: blockArt.media,
 							className: "ap-ms__bg"
 						})
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: "ap-ms__meta",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 							className: "ap-ms__title",
 							title: msTitle,
-							children: [msTitle, currentTrack?.explicit && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExplicitBadge, {})]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							children: [msTitle, currentTrack?.explicit && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ExplicitBadge, {})]
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: "ap-ms__artist",
 							title: msSecondary,
 							children: msSecondary
 						})]
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 						type: "button",
 						className: "ap-btn ap-btn--play ap-ms__play ap-tap",
 						onClick: s.toggle,
 						disabled: !hasAudio,
 						"aria-label": isBuffering ? "Buffering audio" : isPlaying ? "Pause" : "Play",
-						children: isBuffering ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SpinnerIcon$1, {}) : isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PauseIcon$1, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlayIcon$1, {})
+						children: isBuffering ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SpinnerIcon$1, {}) : isPlaying ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PauseIcon$1, {}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PlayIcon$1, {})
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlayerSurfaceButtons, {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)(PlayerSurfaceButtons, {
 						surface,
 						showTransport: true,
 						canPrevious: s.canPrevious,
@@ -18443,10 +17709,10 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 						onNext: s.next
 					})
 				]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: "ap-ms__surface",
 				"data-open": surface.isQueueOpen ? "true" : "false",
-				children: surface.isQueueOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(QueueSurface, { maxItems: 6 })
+				children: surface.isQueueOpen && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(QueueSurface, { maxItems: 6 })
 			})]
 		});
 	}
@@ -18486,74 +17752,74 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			media: artMedia,
 			legacyCss: art
 		});
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("article", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("article", {
 			className: `ap-sea${isActive ? " ap-sea--active" : ""}${className ? ` ${className}` : ""}`,
 			style: {
 				...buildThemeVars(theme),
 				...style
 			},
 			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-sea__art",
 					style: cardArt.cssBackground ? { backgroundImage: cardArt.cssBackground } : void 0,
 					children: [
-						cardArt.media && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BackgroundMedia, {
+						cardArt.media && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(BackgroundMedia, {
 							media: cardArt.media,
 							className: "ap-sea__bg"
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 							type: "button",
 							className: "ap-btn ap-btn--play ap-sea__play ap-tap",
 							onClick: handleToggle,
 							"aria-label": isBufferingThis ? "Buffering audio" : isPlayingThis ? `Pause ${track.title}` : `Play ${track.title}`,
-							children: isBufferingThis ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SpinnerIcon$1, {}) : isPlayingThis ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PauseIcon$1, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlayIcon$1, {})
+							children: isBufferingThis ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SpinnerIcon$1, {}) : isPlayingThis ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PauseIcon$1, {}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PlayIcon$1, {})
 						}),
-						tag && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						tag && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: "ap-sea__tag",
 							children: tag
 						}),
-						isActive && hasPeaks && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						isActive && hasPeaks && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 							type: "button",
 							className: "ap-icon-btn ap-tap ap-sea__wave-btn",
 							onClick: surface.toggleCanvas,
 							"aria-label": surface.isCanvasOpen ? "Hide waveform" : "Show waveform",
 							"aria-expanded": surface.isCanvasOpen,
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WaveIcon, {})
+							children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(WaveIcon, {})
 						})
 					]
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-sea__body",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: "ap-sea__head",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: "ap-sea__meta",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 								className: "ap-sea__title",
 								title: formatVersionedTitle(track.title, track.versionLabel),
 								style: titleFont,
-								children: [formatVersionedTitle(track.title, track.versionLabel), track.explicit && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExplicitBadge, {})]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								children: [formatVersionedTitle(track.title, track.versionLabel), track.explicit && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ExplicitBadge, {})]
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 								className: "ap-sea__artist",
 								title: formatSecondaryLine(track),
 								style: artistFont,
 								children: formatSecondaryLine(track)
 							})]
-						}), showAction && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArcActionButton, {
+						}), showAction && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ArcActionButton, {
 							actions,
 							ariaLabel: `Actions for ${track.title}`,
 							className: "ap-sea__action"
 						})]
-					}), isActive && !surface.isCanvasOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					}), isActive && !surface.isCanvasOpen && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: "ap-sea__progress",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrubberCanvasHost, {
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ScrubberCanvasHost, {
 							face: "seaCard",
 							density: getScrubberDensity("seaCard"),
 							currentTime: s.currentTime,
 							duration: s.duration,
 							progress: s.duration > 0 ? s.currentTime / s.duration : 0,
 							onSeek: s.seek,
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProgressBar, {
+							children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ProgressBar, {
 								currentTime: s.currentTime,
 								duration: s.duration,
 								buffered: s.buffered,
@@ -18566,14 +17832,14 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 						})
 					})]
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SEICanvasHost, {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SEICanvasHost, {
 					open: surface.isCanvasOpen,
 					face: "seaCard",
 					supported: isActive && surface.canvasSupported,
 					activeSurfaceId: surface.mode === "default" ? void 0 : surface.mode,
-					children: surface.isCanvasOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					children: surface.isCanvasOpen && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: "ap-sea__overlay",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlayerHero, {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(PlayerHero, {
 							face: "seaCard",
 							collapsed: false,
 							title: track.title ?? "",
@@ -18585,7 +17851,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 							releaseTitle: track.releaseTitle,
 							subtitle: track.subtitle,
 							marquee: true
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WaveformAdapter, {
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(WaveformAdapter, {
 							face: "seaCard",
 							density: getScrubberDensity("seaCard"),
 							currentTime: s.currentTime,
@@ -18792,7 +18058,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		}, [narrative]);
 		const showSpinner = session.isBuffering;
 		const moodLabel = narrative.mood ?? "Ambience";
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: `ap-nf${embedded ? " ap-nf--embedded" : ""} ap-nf--${narrative.indicatorState}${className ? ` ${className}` : ""}`,
 			style: {
 				...buildThemeVars(theme),
@@ -18802,32 +18068,32 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			"aria-label": "Narration audio",
 			"data-chapter-id": chapterId,
 			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-nf__scape",
 					title: `Soundscape: ${moodLabel}`,
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: "ap-nf__dot",
 						"aria-hidden": "true"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: "ap-nf__mood",
 						children: moodLabel
 					})]
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 					type: "button",
 					className: `ap-btn ap-btn--play ap-nf__play ap-tap${narrative.isPlaying ? " ap-btn--play-active" : ""}`,
 					onClick: narrative.togglePlay,
 					disabled: !narrative.hasNarration,
 					"aria-label": showSpinner ? "Buffering narration" : narrative.isPlaying ? "Pause narration" : "Play narration",
-					children: showSpinner ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SpinnerIcon$1, {}) : narrative.isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PauseIcon$1, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PlayIcon$1, {})
+					children: showSpinner ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SpinnerIcon$1, {}) : narrative.isPlaying ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PauseIcon$1, {}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PlayIcon$1, {})
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "ap-nf__vol ap-nf__vol--narration",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: "ap-nf__vol-label",
 						"aria-hidden": "true",
 						children: "Voice"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VolumeControl, {
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(VolumeControl, {
 						volume: narrative.narrationVolume,
 						isMuted: narrative.isMuted,
 						disabled: !narrative.hasNarration,
@@ -18836,12 +18102,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 						onToggleMute: narrative.toggleMute
 					})]
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
 					className: "ap-nf__vol ap-nf__vol--ambience",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: "ap-nf__vol-label",
 						children: "Ambience"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
 						className: "ap-nf__range",
 						type: "range",
 						min: 0,
@@ -18852,12 +18118,12 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 						"aria-label": "Ambience volume"
 					})]
 				}),
-				showExpand && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				showExpand && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 					type: "button",
 					className: "ap-icon-btn ap-nf__expand ap-tap",
 					onClick: onExpand,
 					"aria-label": "Soundscape settings",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DotsIcon$1, {})
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(DotsIcon$1, {})
 				})
 			]
 		});
@@ -19274,7 +18540,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 			toggleActive,
 			activeInstances
 		]);
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PluginRegistryContext.Provider, {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PluginRegistryContext.Provider, {
 			value: snapshot,
 			children
 		});
@@ -19319,14 +18585,14 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		const { available, installed, install, uninstall, toggleActive, activeInstances } = usePluginRegistry();
 		const installedIds = new Set(installed.map((r) => r.entry.id));
 		const availableButNotInstalled = available.filter((e) => !installedIds.has(e.id));
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "lab-plugin-manager",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: "lab-plugin-manager__head",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 					className: "lab-plugin-manager__title",
 					children: "Plugin Registry"
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 					className: "lab-plugin-manager__badge",
 					children: [
 						activeInstances.length,
@@ -19335,15 +18601,15 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 						" active"
 					]
 				})]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: "lab-plugin-manager__body",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PluginListSection, {
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(PluginListSection, {
 					title: "Available",
 					count: availableButNotInstalled.length,
 					emptyLabel: "All plugins are installed.",
-					children: availableButNotInstalled.map((entry) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PluginCard, {
+					children: availableButNotInstalled.map((entry) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PluginCard, {
 						entry,
-						action: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						action: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 							type: "button",
 							className: "lab-plugin-card__btn lab-plugin-card__btn--install",
 							onClick: () => install(entry.id),
@@ -19351,22 +18617,22 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 							children: "Install"
 						})
 					}, entry.id))
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PluginListSection, {
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PluginListSection, {
 					title: "Installed",
 					count: installed.length,
 					emptyLabel: "No plugins installed yet.",
 					children: installed.map((record) => {
 						const active = record.active;
-						return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PluginCard, {
+						return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PluginCard, {
 							entry: record.entry,
 							active,
-							action: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							action: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
 								className: `lab-plugin-card__btn${active ? " lab-plugin-card__btn--active" : " lab-plugin-card__btn--inactive"}`,
 								onClick: () => toggleActive(record.entry.id),
 								"aria-label": `${active ? "Deactivate" : "Activate"} ${record.entry.label}`,
 								children: active ? "Active" : "Inactive"
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
 								className: "lab-plugin-card__btn lab-plugin-card__btn--uninstall",
 								onClick: () => uninstall(record.entry.id),
@@ -19380,45 +18646,45 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		});
 	}
 	function PluginListSection({ title, count, emptyLabel, children }) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: "lab-plugin-manager__section",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: "lab-plugin-manager__section-head",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 					className: "lab-plugin-manager__section-title",
 					children: title
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 					className: "lab-plugin-manager__section-count",
 					children: count
 				})]
-			}), count === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+			}), count === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: "lab-plugin-manager__empty",
 				children: emptyLabel
-			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: "lab-plugin-manager__list",
 				children
 			})]
 		});
 	}
 	function PluginCard({ entry, active, action }) {
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 			className: `lab-plugin-card${active ? " lab-plugin-card--active" : ""}`,
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: "lab-plugin-card__body",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: "lab-plugin-card__head",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: "lab-plugin-card__label",
 						children: entry.label
-					}), entry.category && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					}), entry.category && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: "lab-plugin-card__category",
 						children: entry.category
 					})]
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 					className: "lab-plugin-card__desc",
 					children: entry.description
 				})]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: "lab-plugin-card__actions",
 				children: action
 			})]
@@ -19448,7 +18714,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		const storeRef = (0, react.useRef)(null);
 		if (storeRef.current === null) storeRef.current = createActivityLogStore(config);
 		const api = (0, react.useMemo)(() => storeRef.current, []);
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ActivityLogContext.Provider, {
+		return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ActivityLogContext.Provider, {
 			value: api,
 			children
 		});
